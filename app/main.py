@@ -298,31 +298,36 @@ def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     try:
         print("🔥 DELETE RECEBIDO:", tipo, caminho, nome)
 
-        # 🔥 REMOVE EMOJI E ESPAÇOS
+        # limpa nome
         nome = nome.replace("📄", "").strip()
 
-        caminho = caminho.strip("/") if caminho else ""
+        # prefixo da pasta real
+        prefix = f"{tipo}/{caminho}".strip("/")
 
-        if caminho:
-            path = f"{tipo}/{caminho}/{nome}"
-        else:
-            path = f"{tipo}/{nome}"
+        print("📂 LISTANDO EM:", prefix)
 
-        path = path.replace("//", "/")
+        arquivos = supabase.storage.from_("documentos").list(prefix)
 
-        print("🔥 PATH FINAL REAL:", path)
+        print("📂 CONTEÚDO REAL:", arquivos)
 
-        supabase.storage.from_("documentos").remove([path])
+        # 🔥 acha o arquivo real
+        for arq in arquivos:
+            if arq.get("name") == nome:
 
-        print("🔥 DELETE EXECUTADO")
+                path_real = f"{prefix}/{nome}"
+                print("🔥 DELETANDO REAL:", path_real)
 
-        # banco
-        db = SessionLocal()
-        db.query(Documento).filter(Documento.nome == nome).delete()
-        db.commit()
-        db.close()
+                supabase.storage.from_("documentos").remove([path_real])
 
-        return {"ok": True}
+                # banco
+                db = SessionLocal()
+                db.query(Documento).filter(Documento.nome == nome).delete()
+                db.commit()
+                db.close()
+
+                return {"ok": True}
+
+        return {"erro": "Arquivo não encontrado no storage"}
 
     except Exception as e:
         print("❌ ERRO DELETE:", str(e))
