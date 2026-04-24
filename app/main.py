@@ -296,30 +296,35 @@ def explorar(tipo: str, caminho: str = ""):
 @app.delete("/delete")
 def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     try:
-        print("🔥 DELETE:", tipo, caminho, nome)
+        print("🔥 DELETE RECEBIDO:", tipo, caminho, nome)
 
-        # 🔥 LISTA TODOS OS ARQUIVOS DA CATEGORIA
-        arquivos = supabase.storage.from_("documentos").list(tipo)
-        print("📂 ARQUIVOS:", arquivos)
+        # 🔥 monta caminho REAL correto
+        caminho = caminho.strip("/") if caminho else ""
+        nome = nome.strip("/")
 
-        # 🔥 PROCURA O ARQUIVO REAL
-        for arq in arquivos:
-            if arq.get("name") == nome:
-                path = f"{tipo}/{nome}"
+        if caminho:
+            path = f"{tipo}/{caminho}/{nome}"
+        else:
+            path = f"{tipo}/{nome}"
 
-                print("🔥 DELETANDO REAL:", path)
+        path = path.replace("//", "/")
 
-                supabase.storage.from_("documentos").remove([path])
+        print("🔥 PATH FINAL REAL:", path)
 
-                # 🔥 remove do banco
-                db = SessionLocal()
-                db.query(Documento).filter(Documento.nome == nome).delete()
-                db.commit()
-                db.close()
+        # 🔥 DELETE DIRETO (SEM LIST)
+        supabase.storage.from_("documentos").remove([path])
 
-                return {"ok": True}
+        print("🔥 DELETE EXECUTADO")
 
-        return {"erro": "Arquivo não encontrado no storage"}
+        # 🔥 remove do banco
+        db = SessionLocal()
+        db.query(Documento).filter(
+            Documento.nome == nome
+        ).delete()
+        db.commit()
+        db.close()
+
+        return {"ok": True}
 
     except Exception as e:
         print("❌ ERRO DELETE:", str(e))
