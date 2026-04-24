@@ -186,16 +186,47 @@ async def upload_explorer(
 def list_files():
     db = SessionLocal()
     documentos = db.query(Documento).all()
+
     resultado = {}
+
     for doc in documentos:
-        if doc.categoria not in resultado:
-            resultado[doc.categoria] = []
-        resultado[doc.categoria].append({
-            "nome": doc.nome,
-            "usuario": doc.usuario,
-            "data": doc.data,
-            "caminho": doc.caminho,
-        })
+
+        # 🔥 monta caminho real
+        caminho = doc.caminho.strip("/") if doc.caminho else ""
+
+        if caminho:
+            path = f"{doc.categoria}/{caminho}/{doc.nome}"
+            pasta = f"{doc.categoria}/{caminho}"
+        else:
+            path = f"{doc.categoria}/{doc.nome}"
+            pasta = doc.categoria
+
+        path = path.replace("//", "/")
+
+        # 🔥 verifica no Supabase
+        lista = supabase.storage.from_("documentos").list(pasta)
+
+        existe = any(arq.get("name") == doc.nome for arq in lista)
+
+        if existe:
+            # mantém no resultado
+            if doc.categoria not in resultado:
+                resultado[doc.categoria] = []
+
+            resultado[doc.categoria].append({
+                "nome": doc.nome,
+                "usuario": doc.usuario,
+                "data": doc.data,
+                "caminho": doc.caminho,
+            })
+
+        else:
+            print("🧹 REMOVENDO FANTASMA:", doc.nome)
+
+            # 🔥 remove do banco automaticamente
+            db.delete(doc)
+            db.commit()
+
     db.close()
     return resultado
 
@@ -338,7 +369,11 @@ def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
 
                 # 🔥 REMOVE DO BANCO
                 db = SessionLocal()
-                db.query(Documento).filter(Documento.nome == nome).delete()
+                db.query(Documento).filter(
+                    Documento.nome == nome,
+                    Documento.categoria == tipo,
+                    Documento.caminho == (caminho or "")
+                ).delete()
                 db.commit()
                 db.close()
 
