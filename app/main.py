@@ -159,7 +159,7 @@ async def upload_explorer(
     try:
         conteudo = await file.read()
 
-        # Monta o caminho correto no Supabase
+        # 🔥 Monta caminho correto no Supabase
         if caminho:
             path_supabase = f"{tipo}/{caminho}/{file.filename}"
         else:
@@ -175,13 +175,27 @@ async def upload_explorer(
         print("[UPLOAD EXPLORER] Sucesso:", response)
         print("📦 TAMANHO:", len(conteudo))
 
+        # 🔥 SALVA NO BANCO (ESSA ERA A PARTE QUE FALTAVA)
+        db = SessionLocal()
+
+        novo_doc = Documento(
+            nome=file.filename,
+            categoria=tipo,
+            caminho=caminho if caminho else "",
+            usuario=usuario,
+            data=str(datetime.now())
+        )
+
+        db.add(novo_doc)
+        db.commit()
+        db.close()
+
         return {"ok": True, "mensagem": "Arquivo enviado com sucesso"}
 
     except Exception as e:
         print("[UPLOAD EXPLORER] ERRO:", str(e))
         return {"erro": str(e)}
 
-# Outras rotas (mantive as principais)
 @app.get("/files")
 def list_files():
     db = SessionLocal()
