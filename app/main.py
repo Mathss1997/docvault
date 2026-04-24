@@ -7,6 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 from datetime import datetime
 from urllib.parse import unquote
+import requests
 
 # ====================== SUPABASE ======================
 import os
@@ -298,28 +299,44 @@ def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     try:
         print("🔥 DELETE RECEBIDO:", tipo, caminho, nome)
 
-        # limpa nome
+        # 🔥 REMOVE EMOJI E ESPAÇOS
         nome = nome.replace("📄", "").strip()
 
-        # prefixo da pasta real
+        # 🔥 NORMALIZA CAMINHO
+        caminho = caminho.strip("/") if caminho else ""
+
         prefix = f"{tipo}/{caminho}".strip("/")
 
         print("📂 LISTANDO EM:", prefix)
 
+        # 🔥 LISTA ARQUIVOS REAIS
         arquivos = supabase.storage.from_("documentos").list(prefix)
-
         print("📂 CONTEÚDO REAL:", arquivos)
 
-        # 🔥 acha o arquivo real
         for arq in arquivos:
             if arq.get("name") == nome:
 
                 path_real = f"{prefix}/{nome}"
+                path_real = path_real.replace("//", "/")
+
                 print("🔥 DELETANDO REAL:", path_real)
 
-                supabase.storage.from_("documentos").remove([path_real])
+                # 🔥 DELETE VIA API (FUNCIONA DE VERDADE)
+                import requests
 
-                # banco
+                url = f"{SUPABASE_URL}/storage/v1/object/documentos/{path_real}"
+
+                headers = {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}"
+                }
+
+                res = requests.delete(url, headers=headers)
+
+                print("🔥 STATUS DELETE:", res.status_code)
+                print("🔥 RESPONSE:", res.text)
+
+                # 🔥 REMOVE DO BANCO
                 db = SessionLocal()
                 db.query(Documento).filter(Documento.nome == nome).delete()
                 db.commit()
