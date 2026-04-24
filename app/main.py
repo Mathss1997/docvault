@@ -298,9 +298,10 @@ def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     try:
         print("🔥 DELETE RECEBIDO:", tipo, caminho, nome)
 
-        # 🔥 monta caminho REAL correto
+        # 🔥 REMOVE EMOJI E ESPAÇOS
+        nome = nome.replace("📄", "").strip()
+
         caminho = caminho.strip("/") if caminho else ""
-        nome = nome.strip("/")
 
         if caminho:
             path = f"{tipo}/{caminho}/{nome}"
@@ -311,16 +312,13 @@ def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
 
         print("🔥 PATH FINAL REAL:", path)
 
-        # 🔥 DELETE DIRETO (SEM LIST)
         supabase.storage.from_("documentos").remove([path])
 
         print("🔥 DELETE EXECUTADO")
 
-        # 🔥 remove do banco
+        # banco
         db = SessionLocal()
-        db.query(Documento).filter(
-            Documento.nome == nome
-        ).delete()
+        db.query(Documento).filter(Documento.nome == nome).delete()
         db.commit()
         db.close()
 
@@ -329,7 +327,6 @@ def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     except Exception as e:
         print("❌ ERRO DELETE:", str(e))
         return {"erro": str(e)}
-
 
 @app.get("/fix-db")
 def fix_db():
