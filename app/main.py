@@ -19,6 +19,8 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+print("🔑 SUPABASE KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "NÃO DEFINIDA")
+
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("""
     ❌ ERRO: SUPABASE_URL ou SUPABASE_KEY não foram encontrados!
@@ -41,6 +43,11 @@ Base.metadata.create_all(bind=engine)
 
 # Configurações
 app = FastAPI()
+@app.on_event("startup")
+def debug_supabase():
+    print("🚀 DEBUG STARTUP")
+    print("🔑 SUPABASE KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "NÃO DEFINIDA")
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key="segredo123")
 
@@ -56,8 +63,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
+
+    print("🚀 DEBUG REQUEST")
+    print("🔑 SUPABASE KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "NÃO DEFINIDA")
+
     if "user" not in request.session:
         return RedirectResponse("/login")
+
     file_path = os.path.join(BASE_DIR, "..", "templates", "dashboard.html")
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
@@ -281,38 +293,61 @@ def explorar(tipo: str, caminho: str = ""):
     }
 
 # ====================== DELETE ======================
+
 @app.delete("/delete")
 def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     try:
-        # 1. Normaliza o caminho para evitar barras duplas
-        # Se caminho for "pasta1", o full_path vira "empenhos/pasta1/arquivo.pdf"
-        if caminho and caminho.strip():
-            path_supabase = f"{tipo}/{caminho.strip('/')}/{nome}"
-        else:
-            path_supabase = f"{tipo}/{nome}"
-        
-        path_supabase = path_supabase.replace("//", "/")
-        print(f"🔥 Tentando deletar do Storage: {path_supabase}")
+        # 🔥 LOGS IMPORTANTES
+        print("🔥 TIPO:", tipo)
+        print("🔥 CAMINHO:", caminho)
+        print("🔥 NOME:", nome)
 
-        # 2. Deleta do Supabase Storage
-        # Importante: o remove espera uma LISTA de strings
-        res_storage = supabase.storage.from_("documentos").remove([path_supabase])
-        
-        # 3. Remove do Banco de Dados Local (SQLite)
+        # 🔥 NORMALIZAÇÃO
+        caminho = caminho.strip("/") if caminho else ""
+        nome = nome.strip("/")
+
+        if caminho:
+            path = f"{tipo}/{caminho}/{nome}"
+        else:
+            path = f"{tipo}/{nome}"
+
+        path = path.replace("//", "/")
+
+        print("🔥 PATH FINAL:", path)
+
+        # 🔥 LISTA ARQUIVOS NA CATEGORIA (DIAGNÓSTICO)
+        arquivos = supabase.storage.from_("documentos").list(tipo)
+        print("📂 ARQUIVOS NO STORAGE:", arquivos)
+
+        # 🔥 TENTA DELETAR PELO PATH COMPLETO
+        print("🔥 TENTANDO DELETE DIRETO...")
+        supabase.storage.from_("documentos").remove([path])
+
+        # 🔥 VERIFICA SE AINDA EXISTE
+        arquivos_depois = supabase.storage.from_("documentos").list(tipo)
+        print("📂 APÓS DELETE:", arquivos_depois)
+
+        # 🔥 FALLBACK (SE NÃO DELETOU PELO CAMINHO)
+        for arq in arquivos:
+            if arq.get("name") == nome:
+                path_fallback = f"{tipo}/{nome}"
+                print("🔥 FALLBACK DELETE:", path_fallback)
+
+                supabase.storage.from_("documentos").remove([path_fallback])
+                break
+
+        # 🔥 REMOVE DO BANCO (mais tolerante)
         db = SessionLocal()
-        # Filtramos pelo nome e pela categoria para não apagar arquivos homônimos em pastas diferentes
         db.query(Documento).filter(
-            Documento.nome == nome,
-            Documento.categoria == tipo
+            Documento.nome == nome
         ).delete()
-        
         db.commit()
         db.close()
 
         return {"ok": True}
 
     except Exception as e:
-        print("ERRO NO DELETE:", str(e))
+        print("❌ ERRO DELETE:", str(e))
         return {"erro": str(e)}
 @app.get("/fix-db")
 def fix_db():
