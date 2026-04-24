@@ -293,62 +293,39 @@ def explorar(tipo: str, caminho: str = ""):
     }
 
 # ====================== DELETE ======================
-
 @app.delete("/delete")
 def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
     try:
-        # 🔥 LOGS IMPORTANTES
-        print("🔥 TIPO:", tipo)
-        print("🔥 CAMINHO:", caminho)
-        print("🔥 NOME:", nome)
+        print("🔥 DELETE:", tipo, caminho, nome)
 
-        # 🔥 NORMALIZAÇÃO
-        caminho = caminho.strip("/") if caminho else ""
-        nome = nome.strip("/")
-
-        if caminho:
-            path = f"{tipo}/{caminho}/{nome}"
-        else:
-            path = f"{tipo}/{nome}"
-
-        path = path.replace("//", "/")
-
-        print("🔥 PATH FINAL:", path)
-
-        # 🔥 LISTA ARQUIVOS NA CATEGORIA (DIAGNÓSTICO)
+        # 🔥 LISTA TODOS OS ARQUIVOS DA CATEGORIA
         arquivos = supabase.storage.from_("documentos").list(tipo)
-        print("📂 ARQUIVOS NO STORAGE:", arquivos)
+        print("📂 ARQUIVOS:", arquivos)
 
-        # 🔥 TENTA DELETAR PELO PATH COMPLETO
-        print("🔥 TENTANDO DELETE DIRETO...")
-        supabase.storage.from_("documentos").remove([path])
-
-        # 🔥 VERIFICA SE AINDA EXISTE
-        arquivos_depois = supabase.storage.from_("documentos").list(tipo)
-        print("📂 APÓS DELETE:", arquivos_depois)
-
-        # 🔥 FALLBACK (SE NÃO DELETOU PELO CAMINHO)
+        # 🔥 PROCURA O ARQUIVO REAL
         for arq in arquivos:
             if arq.get("name") == nome:
-                path_fallback = f"{tipo}/{nome}"
-                print("🔥 FALLBACK DELETE:", path_fallback)
+                path = f"{tipo}/{nome}"
 
-                supabase.storage.from_("documentos").remove([path_fallback])
-                break
+                print("🔥 DELETANDO REAL:", path)
 
-        # 🔥 REMOVE DO BANCO (mais tolerante)
-        db = SessionLocal()
-        db.query(Documento).filter(
-            Documento.nome == nome
-        ).delete()
-        db.commit()
-        db.close()
+                supabase.storage.from_("documentos").remove([path])
 
-        return {"ok": True}
+                # 🔥 remove do banco
+                db = SessionLocal()
+                db.query(Documento).filter(Documento.nome == nome).delete()
+                db.commit()
+                db.close()
+
+                return {"ok": True}
+
+        return {"erro": "Arquivo não encontrado no storage"}
 
     except Exception as e:
         print("❌ ERRO DELETE:", str(e))
         return {"erro": str(e)}
+
+
 @app.get("/fix-db")
 def fix_db():
     from sqlalchemy import text
