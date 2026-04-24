@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Novo Usuário</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="login-container">
+    
+    <div class="login-box">
+        
+        <h2>👤 Novo Usuário</h2>
+
+        {% if erro %}
+            <div class="erro-msg">{{ erro }}</div>
+        {% endif %}
+
+        <form method="post" action="/usuarios/novo">
+
+            <div class="input-group">
+                <label>Usuário</label>
+                <input type="text" name="usuario" required>
+            </div>
+
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" name="senha" required>
+            </div>
+
+            <div class="input-group">
+                <label>Tipo</label>
+                <select name="tipo">
+                    <option value="user">Usuário</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <button class="btn-login">Cadastrar</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

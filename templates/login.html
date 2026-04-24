@@ -1,0 +1,42 @@
+<head>
+    <meta charset="UTF-8">
+    <title>DocVault Login</title>
+
+    <!-- 🔥 ESSA LINHA É O QUE FALTA -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<div class="login-container">
+    
+    <div class="login-box">
+        
+        <div class="login-header">
+            <h2>🔐 DocVault</h2>
+            <p>Seus documentos, seguros e organizados</p>
+        </div>
+
+        <form method="post" action="/login" id="loginForm">
+
+    <div class="input-group">
+        <label>Usuário</label>
+        <input type="text" name="usuario" required>
+    </div>
+
+    <div class="input-group senha-group">
+        <label>Senha</label>
+        <div class="senha-wrapper">
+            <input type="password" name="senha" id="senha" required>
+            <span class="toggle-senha" onclick="toggleSenha()">👁</span>
+        </div>
+    </div>
+
+    <div id="erro-login" class="erro-msg"></div>
+
+    <button class="btn-login" id="btnLogin">
+        <span id="btnText">Entrar</span>
+    </button>
+
+</form>
+
+    </div>
+
+</div>
