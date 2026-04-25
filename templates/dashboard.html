@@ -268,6 +268,132 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 .leg-item{display:flex;align-items:center;gap:7px;font-size:12.5px;}
 .leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 
+/* DOC LIST */
+.doc-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  transition:background var(--t);
+  cursor:pointer;
+}
+.doc-row:last-child{border-bottom:none;}
+.doc-row:hover{background:var(--surface-2);}
+.doc-row:hover .doc-actions{opacity:1;}
+
+.doc-thumb{
+  width:42px;height:52px;
+  border-radius:5px;
+  border:1px solid var(--border);
+  background:var(--surface-2);
+  overflow:hidden;
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  position:relative;
+}
+.doc-thumb canvas{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+.doc-thumb-loading{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-2);
+}
+
+.doc-info{flex:1;min-width:0;}
+.doc-name{
+  font-size:13.5px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:3px;
+}
+.doc-meta{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.doc-meta-item{font-size:11.5px;color:var(--text-3);}
+.doc-meta-dot{font-size:9px;color:var(--text-3);}
+
+.doc-actions{
+  display:flex;gap:5px;
+  opacity:0;
+  transition:opacity var(--t);
+  flex-shrink:0;
+}
+
+/* grid view */
+.doc-grid-wrap{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:12px;
+  padding:14px;
+}
+.doc-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  overflow:hidden;
+  cursor:pointer;
+  transition:all var(--t);
+}
+.doc-card:hover{
+  border-color:var(--accent);
+  box-shadow:var(--shadow-md);
+  transform:translateY(-2px);
+}
+.doc-card:hover .doc-card-actions{opacity:1;}
+.doc-card-thumb{
+  height:110px;
+  background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+  position:relative;
+}
+.doc-card-thumb canvas{width:100%;height:100%;object-fit:cover;}
+.doc-card-body{padding:10px 12px;}
+.doc-card-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
+.doc-card-meta{font-size:11px;color:var(--text-3);}
+.doc-card-actions{
+  display:flex;gap:4px;padding:8px 10px;border-top:1px solid var(--border);
+  opacity:0;transition:opacity var(--t);
+}
+
+/* empty state docs */
+.doc-empty{
+  padding:64px 24px;
+  text-align:center;
+  color:var(--text-3);
+}
+.doc-empty-icon{
+  width:64px;height:64px;
+  background:var(--surface-2);
+  border-radius:var(--r-lg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  margin:0 auto 16px;
+  border:1px solid var(--border);
+}
+.doc-empty h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px;}
+.doc-empty p{font-size:13.5px;line-height:1.6;max-width:320px;margin:0 auto 20px;}
+
+/* stat chip */
+.stat-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:99px;
+  font-size:12.5px;
+  cursor:pointer;
+  transition:all var(--t);
+  white-space:nowrap;
+}
+.stat-chip:hover{border-color:var(--accent);color:var(--accent);}
+.stat-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.stat-chip-count{font-weight:700;}
+
 /* SCANNER BUTTON */
 .btn-scanner{background:linear-gradient(135deg,#0D9488,#0891B2);color:#fff;border:none;transition:all var(--t);}
 .btn-scanner:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 12px rgba(13,148,136,.35);}
@@ -350,31 +476,74 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 
     <!-- DOCUMENTOS -->
     <div id="sec-docs" class="sec">
-      <div class="panel" style="margin-bottom:12px;">
-        <div class="panel-bd" style="padding:10px 13px;">
-          <div class="frow">
-            <input type="text" class="finput finput-sm" id="docSearch" placeholder="Buscar documentos…" style="flex:1;min-width:200px;" oninput="renderDocTable()">
-            <select class="finput finput-sm" id="docCatFilter" onchange="renderDocTable()" style="width:180px;">
-              <option value="">Todas as categorias</option>
-              <option value="empenhos">Empenhos</option>
-              <option value="licitacoes">Licitações</option>
-              <option value="contratos">Contratos</option>
-            </select>
+
+      <!-- Toolbar superior -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px;">Documentos</h2>
+          <p style="font-size:13px;color:var(--text-3);margin-top:2px;" id="docSubtitle">Carregando…</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+            📤 Upload rápido
+            <input type="file" id="quickUploadInput" multiple style="display:none" onchange="quickUpload(this.files)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Barra de busca + filtros -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div style="padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div style="position:relative;flex:1;min-width:220px;">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-3);pointer-events:none;">🔍</span>
+            <input type="text" class="finput finput-sm" id="docSearch"
+              placeholder="Buscar por nome, categoria, usuário…"
+              style="padding-left:34px;"
+              oninput="renderDocList()">
+          </div>
+          <select class="finput finput-sm" id="docCatFilter" onchange="renderDocList()" style="width:175px;">
+            <option value="">Todas as categorias</option>
+            <option value="empenhos">Empenhos</option>
+            <option value="licitacoes">Licitações</option>
+            <option value="contratos">Contratos</option>
+          </select>
+          <select class="finput finput-sm" id="docSort" onchange="renderDocList()" style="width:175px;">
+            <option value="data_desc">Mais recentes primeiro</option>
+            <option value="data_asc">Mais antigos primeiro</option>
+            <option value="nome_asc">Nome A→Z</option>
+            <option value="nome_desc">Nome Z→A</option>
+          </select>
+          <!-- toggle view -->
+          <div style="display:flex;gap:4px;border:1px solid var(--border);border-radius:var(--r-sm);padding:3px;background:var(--surface-2);">
+            <button id="viewList" onclick="setDocView('list')" title="Lista" class="btn btn-sm" style="padding:4px 8px;font-size:13px;background:var(--accent);color:#fff;border-radius:4px;">☰</button>
+            <button id="viewGrid" onclick="setDocView('grid')" title="Grid" class="btn btn-sm" style="padding:4px 8px;font-size:13px;background:transparent;color:var(--text-3);border-radius:4px;">⊞</button>
           </div>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-hd"><span class="panel-title">Todos os documentos</span><span class="badge b-blue" id="docCount">0 arquivos</span></div>
-        <div style="overflow-x:auto;">
-          <table class="tbl">
-            <thead><tr><th>Nome</th><th>Categoria</th><th>Indexado</th><th>Enviado por</th><th>Data</th><th style="width:140px;">Ações</th></tr></thead>
-            <tbody id="docTbody"><tr><td colspan="6"><div class="pdf-load" style="padding:32px"><div class="spin"></div></div></td></tr></tbody>
-          </table>
+
+      <!-- Stat chips rápidos -->
+      <div id="docStatChips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+
+      <!-- Upload rápido drop zone (oculto, aparece ao arrastar) -->
+      <div id="docDropZone" style="display:none;border:2px dashed var(--accent);border-radius:var(--r-md);padding:20px;text-align:center;color:var(--accent);font-size:14px;margin-bottom:14px;background:var(--accent-soft);">
+        📤 Solte os arquivos aqui para fazer upload na categoria selecionada
+      </div>
+      <div id="docUploadList" style="margin-bottom:10px;"></div>
+
+      <!-- Lista de documentos -->
+      <div class="panel" id="docListPanel">
+        <div class="panel-hd" style="padding:10px 14px;">
+          <span class="panel-title" id="docListTitle">Todos os documentos</span>
+          <span class="badge b-blue" id="docCount">0 arquivos</span>
+        </div>
+        <div id="docListBody">
+          <div class="pdf-load" style="padding:48px"><div class="spin spin-lg"></div></div>
         </div>
       </div>
-    </div>
 
-    <!-- EXPLORADOR -->
+    </div>
+    
+        <!-- EXPLORADOR -->
     <div id="sec-exp" class="sec">
       <div class="exp-toolbar">
         <select class="finput finput-sm" id="expTipo" onchange="loadExp(this.value,'')" style="width:155px;">
@@ -673,7 +842,7 @@ function showSec(id,navEl){
   document.getElementById("pageTitle").textContent=SEC_TITLES[id]||"";
   closeSidebar();
   if(id==="sec-dash")loadDashboard();
-  if(id==="sec-docs")renderDocTable();
+  if(id==="sec-docs"){renderDocList();}
   if(id==="sec-exp")loadExp(S.exp.tipo,S.exp.caminho);
   if(id==="sec-idx")runSearch();
   if(id==="sec-users")loadUsers();
@@ -748,40 +917,7 @@ function renderRecent(recentes){
 }
 
 /* DOC TABLE */
-function renderDocTable(){
-  const tbody=document.getElementById("docTbody");
-  const q=(document.getElementById("docSearch")?.value||"").toLowerCase();
-  const cat=document.getElementById("docCatFilter")?.value||"";
-  let count=0,html="";
-  for(const categoria in S.files){
-    if(cat&&cat!==categoria)continue;
-    const docs=S.files[categoria].filter(f=>!f.nome.startsWith(".")&&(!q||f.nome.toLowerCase().includes(q)||categoria.toLowerCase().includes(q)));
-    if(!docs.length)continue;
-    html+=`<tr class="cat-row"><td colspan="6">📁 ${categoria}</td></tr>`;
-    docs.forEach(f=>{
-      count++;
-      const d=f.data?new Date(f.data).toLocaleDateString("pt-BR"):"—";
-      const indexed=f.id?"<span class='badge b-teal' style='font-size:10px'>✓ Sim</span>":"<span class='badge b-slate' style='font-size:10px'>— Não</span>";
-      const delBtn=S.tipo==="admin"?`<button class="btn btn-rose btn-sm" onclick="deleteFile('${categoria}','${f.caminho||""}','${f.nome}',this)">🗑</button>`:"";
-      html+=`<tr>
-        <td>${fileIcon(f.nome)} ${f.nome}</td>
-        <td><span class="badge b-blue">${categoria}</span></td>
-        <td>${indexed}</td>
-        <td style="color:var(--text-2)">${f.usuario||"—"}</td>
-        <td style="color:var(--text-2);font-size:12px">${d}</td>
-        <td><div style="display:flex;gap:5px;">
-          <button class="btn btn-ghost btn-sm" onclick="openFile('${categoria}','${f.caminho||""}','${f.nome}',${f.id||null})">👁</button>
-          <button class="btn btn-amber btn-sm" onclick="openSidxModal(${f.id||null},'${categoria}','${f.caminho||""}','${f.nome}')">⊛</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadFile('${categoria}','${f.caminho||""}','${f.nome}')">⬇</button>
-          ${delBtn}
-        </div></td></tr>`;
-    });
-  }
-  tbody.innerHTML=html||`<tr><td colspan="6"><div class="empty" style="padding:40px"><div class="empty-ico">📂</div><h4>Nenhum documento</h4></div></td></tr>`;
-  document.getElementById("docCount").textContent=`${count} arquivo${count!==1?"s":""}`;
-}
 
-/* OPEN FILE */
 async function openFile(tipo,caminho,nome,docId){
   S.pdf={task:null,doc:null,tipo,caminho,nome,docId};
   const modal=document.getElementById("pdfModal");
@@ -1355,6 +1491,308 @@ async function iniciarDigitalizacao(){
     btnScan.classList.remove("scanning");
   }
 }
+
+/* ══ DOCUMENTOS — NOVA IMPLEMENTAÇÃO ══ */
+let docView = "list";        // "list" | "grid"
+let docActiveCat = "";       // filtro por chip de categoria
+const pdfThumbCache = {};    // cache de thumbnails já renderizados
+
+function setDocView(v){
+  docView = v;
+  document.getElementById("viewList").style.background = v==="list" ? "var(--accent)" : "transparent";
+  document.getElementById("viewList").style.color      = v==="list" ? "#fff" : "var(--text-3)";
+  document.getElementById("viewGrid").style.background = v==="grid" ? "var(--accent)" : "transparent";
+  document.getElementById("viewGrid").style.color      = v==="grid" ? "#fff" : "var(--text-3)";
+  renderDocList();
+}
+
+function renderDocList(){
+  const q      = (document.getElementById("docSearch")?.value||"").toLowerCase();
+  const cat    = docActiveCat || document.getElementById("docCatFilter")?.value || "";
+  const sort   = document.getElementById("docSort")?.value || "data_desc";
+  const body   = document.getElementById("docListBody");
+
+  // Coleta todos os docs em array plano
+  let all = [];
+  for(const categoria in S.files){
+    if(cat && cat !== categoria) continue;
+    S.files[categoria].forEach(f=>{
+      if(f.nome.startsWith(".")) return;
+      if(q && !f.nome.toLowerCase().includes(q) &&
+               !categoria.toLowerCase().includes(q) &&
+               !(f.usuario||"").toLowerCase().includes(q)) return;
+      all.push({...f, categoria});
+    });
+  }
+
+  // Ordenação
+  all.sort((a,b)=>{
+    if(sort==="data_desc") return (b.data||"").localeCompare(a.data||"");
+    if(sort==="data_asc")  return (a.data||"").localeCompare(b.data||"");
+    if(sort==="nome_asc")  return a.nome.localeCompare(b.nome);
+    if(sort==="nome_desc") return b.nome.localeCompare(a.nome);
+    return 0;
+  });
+
+  // Atualiza badge e subtítulo
+  const total = all.length;
+  document.getElementById("docCount").textContent   = `${total} arquivo${total!==1?"s":""}`;
+  document.getElementById("docListTitle").textContent = cat
+    ? `${cat.charAt(0).toUpperCase()+cat.slice(1)}`
+    : "Todos os documentos";
+  document.getElementById("docSubtitle").textContent = total > 0
+    ? `${total} documento${total!==1?"s":""} encontrado${total!==1?"s":""}`
+    : "Nenhum documento ainda";
+
+  // Stat chips
+  renderDocStatChips();
+
+  // Empty state
+  if(!all.length){
+    body.innerHTML = `
+      <div class="doc-empty">
+        <div class="doc-empty-icon">📂</div>
+        <h3>${q ? "Nenhum resultado" : "Pasta vazia"}</h3>
+        <p>${q
+          ? `Nenhum documento encontrado para "<strong>${q}</strong>".`
+          : "Faça upload de arquivos pelo Explorador ou use o botão acima."
+        }</p>
+        ${!q ? `<label class="btn btn-primary" style="cursor:pointer;display:inline-flex;">
+          📤 Fazer upload agora
+          <input type="file" multiple style="display:none" onchange="quickUpload(this.files)">
+        </label>` : ""}
+      </div>`;
+    return;
+  }
+
+  // Renderiza lista ou grid
+  if(docView === "list"){
+    body.innerHTML = all.map(f => buildDocRow(f)).join("");
+  } else {
+    body.innerHTML = `<div class="doc-grid-wrap">${all.map(f => buildDocCard(f)).join("")}</div>`;
+  }
+
+  // Gera thumbnails PDF de forma assíncrona
+  all.forEach(f => {
+    if(f.nome.toLowerCase().endsWith(".pdf")){
+      generateThumb(f);
+    }
+  });
+}
+
+function buildDocRow(f){
+  const ext    = f.nome.split(".").pop().toLowerCase();
+  const isPdf  = ext === "pdf";
+  const isImg  = ["png","jpg","jpeg","gif"].includes(ext);
+  const icon   = isPdf?"📄":isImg?"🖼":["docx","doc"].includes(ext)?"📝":["xlsx","xls"].includes(ext)?"📊":"📎";
+  const date   = f.data ? new Date(f.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric"}) : "—";
+  const thumbId = `thumb_${f.categoria}_${f.nome.replace(/[^a-z0-9]/gi,"_")}`;
+  const indexed = f.id
+    ? `<span class="badge b-teal" style="font-size:10px">✓ Indexado</span>`
+    : `<span class="badge b-slate" style="font-size:10px">— Não indexado</span>`;
+  const delBtn = S.tipo==="admin"
+    ? `<button class="btn btn-rose btn-sm" onclick="event.stopPropagation();deleteFile('${f.categoria}','${f.caminho||""}','${f.nome}',this)" title="Excluir">🗑</button>`
+    : "";
+
+  return `
+    <div class="doc-row" onclick="openFile('${f.categoria}','${f.caminho||""}','${f.nome}',${f.id||null})">
+      <div class="doc-thumb" id="${thumbId}">
+        ${isPdf
+          ? `<div class="doc-thumb-loading"><div class="spin" style="width:14px;height:14px;border-width:2px;"></div></div>`
+          : isImg
+          ? `<img src="" style="width:100%;height:100%;object-fit:cover;display:none" onload="this.style.display='block'" data-src-cat="${f.categoria}" data-src-cam="${f.caminho||""}" data-src-nom="${f.nome}">`
+          : icon
+        }
+      </div>
+      <div class="doc-info">
+        <div class="doc-name" title="${f.nome}">${f.nome}</div>
+        <div class="doc-meta">
+          <span class="badge b-blue" style="font-size:10px">${f.categoria}</span>
+          <span class="doc-meta-dot">·</span>
+          <span class="doc-meta-item">${f.usuario||"—"}</span>
+          <span class="doc-meta-dot">·</span>
+          <span class="doc-meta-item">${date}</span>
+          <span class="doc-meta-dot">·</span>
+          ${indexed}
+        </div>
+      </div>
+      <div class="doc-actions">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openFile('${f.categoria}','${f.caminho||""}','${f.nome}',${f.id||null})" title="Visualizar">👁</button>
+        <button class="btn btn-amber btn-sm" onclick="event.stopPropagation();openSidxModal(${f.id||null},'${f.categoria}','${f.caminho||""}','${f.nome}')" title="Indexar">◎</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();downloadFile('${f.categoria}','${f.caminho||""}','${f.nome}')" title="Baixar">⬇</button>
+        ${delBtn}
+      </div>
+    </div>`;
+}
+
+function buildDocCard(f){
+  const ext    = f.nome.split(".").pop().toLowerCase();
+  const isPdf  = ext === "pdf";
+  const isImg  = ["png","jpg","jpeg","gif"].includes(ext);
+  const icon   = isPdf?"📄":isImg?"🖼":["docx","doc"].includes(ext)?"📝":["xlsx","xls"].includes(ext)?"📊":"📎";
+  const date   = f.data ? new Date(f.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}) : "—";
+  const thumbId = `cardthumb_${f.categoria}_${f.nome.replace(/[^a-z0-9]/gi,"_")}`;
+  const delBtn  = S.tipo==="admin"
+    ? `<button class="btn btn-rose btn-sm" onclick="event.stopPropagation();deleteFile('${f.categoria}','${f.caminho||""}','${f.nome}',this)" title="Excluir">🗑</button>`
+    : "";
+
+  return `
+    <div class="doc-card" onclick="openFile('${f.categoria}','${f.caminho||""}','${f.nome}',${f.id||null})">
+      <div class="doc-card-thumb" id="${thumbId}">
+        ${isPdf
+          ? `<div class="doc-thumb-loading" style="background:transparent"><div class="spin" style="width:16px;height:16px;"></div></div>`
+          : icon
+        }
+      </div>
+      <div class="doc-card-body">
+        <div class="doc-card-name" title="${f.nome}">${f.nome}</div>
+        <div class="doc-card-meta">${f.categoria} · ${date}</div>
+      </div>
+      <div class="doc-card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openFile('${f.categoria}','${f.caminho||""}','${f.nome}',${f.id||null})">👁</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();downloadFile('${f.categoria}','${f.caminho||""}','${f.nome}')">⬇</button>
+        ${delBtn}
+      </div>
+    </div>`;
+}
+
+async function generateThumb(f){
+  const thumbId     = `thumb_${f.categoria}_${f.nome.replace(/[^a-z0-9]/gi,"_")}`;
+  const cardThumbId = `cardthumb_${f.categoria}_${f.nome.replace(/[^a-z0-9]/gi,"_")}`;
+  const cacheKey    = `${f.categoria}/${f.caminho}/${f.nome}`;
+
+  // Já temos no cache?
+  if(pdfThumbCache[cacheKey]){
+    applyThumb(thumbId, pdfThumbCache[cacheKey], false);
+    applyThumb(cardThumbId, pdfThumbCache[cacheKey], true);
+    return;
+  }
+
+  try{
+    const p    = new URLSearchParams({tipo:f.categoria, caminho:f.caminho||"", nome:f.nome});
+    const res  = await fetch(`/signed-url?${p}`);
+    const data = await res.json();
+    if(data.erro) return;
+
+    const task = pdfjsLib.getDocument(data.url);
+    const pdf  = await task.promise;
+    const page = await pdf.getPage(1);
+
+    // Escala para thumbnail pequeno
+    const vp0   = page.getViewport({scale:1});
+    const scale = 52 / vp0.height;         // altura fixa 52px (doc-thumb)
+    const vp    = page.getViewport({scale});
+    const cv    = document.createElement("canvas");
+    cv.width    = vp.width;
+    cv.height   = vp.height;
+    await page.render({canvasContext:cv.getContext("2d"), viewport:vp}).promise;
+    pdf.destroy();
+
+    // Salva no cache como dataURL
+    pdfThumbCache[cacheKey] = cv.toDataURL("image/jpeg", 0.7);
+
+    applyThumb(thumbId,     pdfThumbCache[cacheKey], false);
+    applyThumb(cardThumbId, pdfThumbCache[cacheKey], true);
+  }catch(e){
+    // Se falhar, mantém ícone
+  }
+}
+
+function applyThumb(elemId, dataUrl, isCard){
+  const el = document.getElementById(elemId);
+  if(!el) return;
+  const img = document.createElement("img");
+  img.src   = dataUrl;
+  img.style.cssText = isCard
+    ? "width:100%;height:100%;object-fit:cover;display:block;"
+    : "width:100%;height:100%;object-fit:cover;display:block;border-radius:4px;";
+  el.innerHTML = "";
+  el.appendChild(img);
+}
+
+function renderDocStatChips(){
+  const chips = document.getElementById("docStatChips");
+  if(!chips) return;
+  let total = 0;
+  const cats = {};
+  for(const cat in S.files){
+    const n = S.files[cat].filter(f=>!f.nome.startsWith(".")).length;
+    cats[cat] = n;
+    total += n;
+  }
+  let html = `<button class="stat-chip ${!docActiveCat?"active":""}" onclick="filterByCatChip('')">
+    Todos <span class="stat-chip-count">${total}</span>
+  </button>`;
+  for(const [cat,n] of Object.entries(cats)){
+    html += `<button class="stat-chip ${docActiveCat===cat?"active":""}" onclick="filterByCatChip('${cat}')">
+      ${cat.charAt(0).toUpperCase()+cat.slice(1)} <span class="stat-chip-count">${n}</span>
+    </button>`;
+  }
+  chips.innerHTML = html;
+}
+
+function filterByCatChip(cat){
+  docActiveCat = cat;
+  document.getElementById("docCatFilter").value = cat;
+  renderDocList();
+}
+
+/* Upload rápido — upload via botão na tela de Documentos */
+async function quickUpload(files){
+  if(!files.length) return;
+  const cat = docActiveCat || document.getElementById("docCatFilter")?.value || "empenhos";
+  const listEl = document.getElementById("docUploadList");
+
+  const entries = Array.from(files).map(f=>{
+    const el = document.createElement("div");
+    el.className = "upload-row";
+    el.innerHTML = `<span>⏳</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <div class="up-bar"><div class="up-fill" style="width:0%"></div></div>`;
+    listEl.appendChild(el);
+    return {file:f, el};
+  });
+
+  for(const {file,el} of entries){
+    const fill = el.querySelector(".up-fill");
+    const ico  = el.querySelector("span");
+    const fd   = new FormData();
+    fd.append("files", file);
+    fd.append("tipo",  cat);
+    fd.append("caminho", "");
+    fill.style.width = "35%";
+    try{
+      const res  = await fetch("/upload_explorer",{method:"POST",body:fd});
+      const data = await res.json();
+      fill.style.width = "100%";
+      if(data.ok){ ico.textContent="✅"; toast("success","Upload concluído",file.name); }
+      else{ ico.textContent="❌"; toast("error","Erro no upload",data.resultados?.[0]?.erro||""); }
+    }catch(e){ ico.textContent="❌"; toast("error","Erro de conexão",file.name); }
+    setTimeout(()=>el.remove(), 3000);
+  }
+  await loadFiles();
+  renderDocList();
+  loadDashboard();
+}
+
+/* Drag & drop na tela de Documentos */
+(function setupDocDrag(){
+  const sec = document.getElementById("sec-docs");
+  if(!sec) return;
+  sec.addEventListener("dragover", e=>{
+    e.preventDefault();
+    document.getElementById("docDropZone").style.display = "block";
+  });
+  sec.addEventListener("dragleave", e=>{
+    if(!sec.contains(e.relatedTarget))
+      document.getElementById("docDropZone").style.display = "none";
+  });
+  sec.addEventListener("drop", e=>{
+    e.preventDefault();
+    document.getElementById("docDropZone").style.display = "none";
+    if(e.dataTransfer.files.length) quickUpload(e.dataTransfer.files);
+  });
+})();
 
 init();
 </script>
