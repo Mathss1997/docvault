@@ -268,6 +268,13 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 .leg-item{display:flex;align-items:center;gap:7px;font-size:12.5px;}
 .leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 
+/* SCANNER BUTTON */
+.btn-scanner{background:linear-gradient(135deg,#0D9488,#0891B2);color:#fff;border:none;transition:all var(--t);}
+.btn-scanner:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 12px rgba(13,148,136,.35);}
+.btn-scanner:disabled{opacity:.5;pointer-events:none;}
+.btn-scanner.scanning{background:linear-gradient(135deg,#D97706,#B45309);animation:scanPulse 1.5s ease-in-out infinite;}
+@keyframes scanPulse{0%,100%{box-shadow:0 0 0 0 rgba(217,119,6,.4);}50%{box-shadow:0 0 0 8px rgba(217,119,6,0);}}
+
 /* RESPONSIVE */
 .menu-tog{display:none;}
 .sidebar-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;}
@@ -376,6 +383,9 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
           <option value="contratos">Contratos</option>
         </select>
         <button class="btn btn-ghost btn-sm" onclick="goBack()">← Voltar</button>
+        <button class="btn btn-scanner btn-sm" id="btnScan" onclick="abrirModalScanner()" title="Digitalizar documento com scanner">
+          <span id="scanBtnIcon">📠</span> Digitalizar
+        </button>
         <div style="flex:1"></div>
         <input type="text" class="finput finput-sm" id="newFolderInp" placeholder="Nome da pasta…" style="width:165px;">
         <button class="btn btn-ghost btn-sm" onclick="createFolder()">➕ Criar pasta</button>
@@ -538,6 +548,89 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
   <div class="ctx-sep"></div>
   <button class="ctx-i danger" id="ctxDel" onclick="ctxDelete()">🗑 Excluir</button>
 </div>
+
+<!-- MODAL SCANNER -->
+<div class="sidx-ov" id="scanModal">
+  <div class="sidx-box" style="max-width:480px;">
+    <div class="sidx-hd">
+      <div>
+        <div class="sidx-title">📠 Digitalizar Documento</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:2px;" id="scanAgentStatus">Verificando agente…</div>
+      </div>
+      <button class="icon-btn" onclick="fecharModalScanner()">✕</button>
+    </div>
+    <div class="sidx-body" style="gap:14px;">
+
+      <!-- Status do agente -->
+      <div id="scanStatusCard" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;">
+        <div id="scanStatusDot" style="width:10px;height:10px;border-radius:50%;background:var(--text-3);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:13px;font-weight:500;" id="scanStatusText">Aguardando…</div>
+          <div style="font-size:11.5px;color:var(--text-3);" id="scanStatusSub"></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="verificarAgente()">↻ Verificar</button>
+      </div>
+
+      <!-- Nome do arquivo -->
+      <div class="fgroup">
+        <label class="flabel">Nome do arquivo (sem .pdf)</label>
+        <input type="text" class="finput" id="scanNome" placeholder="ex: empenho_001_2024">
+        <span style="font-size:11.5px;color:var(--text-3);margin-top:4px;">Deixe em branco para gerar nome automático com data/hora.</span>
+      </div>
+
+      <!-- Configurações rápidas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="fgroup">
+          <label class="flabel">Resolução (DPI)</label>
+          <select class="finput finput-sm" id="scanDpi">
+            <option value="150">150 dpi — rápido</option>
+            <option value="300" selected>300 dpi — padrão</option>
+            <option value="600">600 dpi — alta qualidade</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Modo de cor</label>
+          <select class="finput finput-sm" id="scanCor">
+            <option value="Color">Colorido</option>
+            <option value="Gray">Escala de cinza</option>
+            <option value="BlackAndWhite">Preto e branco</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Destino -->
+      <div style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;">
+        <div style="font-size:11.5px;font-weight:600;color:var(--accent-text);margin-bottom:4px;">📂 Destino do arquivo</div>
+        <div style="font-size:13px;" id="scanDestino">—</div>
+      </div>
+
+      <!-- Progresso -->
+      <div id="scanProgressArea" style="display:none;text-align:center;padding:16px 0;">
+        <div style="font-size:32px;margin-bottom:10px;" id="scanProgressIcon">📠</div>
+        <div style="font-size:14px;font-weight:500;" id="scanProgressText">Digitalizando…</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:4px;" id="scanProgressSub">Aguarde enquanto o documento é processado.</div>
+        <div style="height:4px;background:var(--border);border-radius:99px;margin-top:14px;overflow:hidden;">
+          <div id="scanProgressBar" style="height:100%;background:linear-gradient(90deg,#0D9488,#0891B2);border-radius:99px;width:30%;animation:scanBar 1.5s ease-in-out infinite;"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="sidx-ft">
+      <button class="btn btn-ghost" onclick="fecharModalScanner()">Cancelar</button>
+      <button class="btn btn-scanner" id="btnIniciarScan" onclick="iniciarDigitalizacao()" disabled>
+        📠 Iniciar digitalização
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes scanBar{
+  0%{transform:translateX(-100%)}
+  50%{transform:translateX(200%)}
+  100%{transform:translateX(400%)}
+}
+</style>
 
 <!-- TOASTS -->
 <div class="toast-wrap" id="toastWrap"></div>
@@ -1102,6 +1195,166 @@ async function deleteUser(id,nome,btn){
 
 /* RESPONSIVE */
 (()=>{const mq=window.matchMedia("(max-width:700px)");const fix=e=>{const g=document.getElementById("dashGrid");if(g)g.style.gridTemplateColumns=e.matches?"1fr":"1fr 1fr";};mq.addEventListener("change",fix);fix(mq);})();
+
+/* ══ SCANNER ══ */
+const SCANNER_AGENT = "http://localhost:7878";
+let scannerOnline = false;
+
+async function verificarAgente(){
+  const dot  = document.getElementById("scanStatusDot");
+  const text = document.getElementById("scanStatusText");
+  const sub  = document.getElementById("scanStatusSub");
+  const btn  = document.getElementById("btnIniciarScan");
+  const agSt = document.getElementById("scanAgentStatus");
+
+  dot.style.background  = "#D97706";
+  text.textContent      = "Verificando agente…";
+  sub.textContent       = "";
+
+  try{
+    const res  = await fetch(`${SCANNER_AGENT}/status`, {signal: AbortSignal.timeout(3000)});
+    const data = await res.json();
+    const sc   = data.scanners || [];
+    scannerOnline = true;
+    dot.style.background = "#16A34A";
+    if(sc.length > 0){
+      text.textContent = `Scanner encontrado: ${sc[0].nome}`;
+      sub.textContent  = `${sc.length} dispositivo(s) disponível(is)`;
+      agSt.textContent = `Agente online · ${sc[0].nome}`;
+      btn.disabled = false;
+    } else {
+      text.textContent = "Agente online, mas nenhum scanner detectado";
+      sub.textContent  = "Verifique se o scanner está ligado e conectado.";
+      agSt.textContent = "Agente online — scanner não detectado";
+      btn.disabled = true;
+    }
+  }catch(e){
+    scannerOnline = false;
+    dot.style.background = "#BE123C";
+    text.textContent = "Agente offline";
+    sub.textContent  = "Execute iniciar_scanner.bat na máquina do scanner.";
+    agSt.textContent = "Agente offline — execute iniciar_scanner.bat";
+    if(btn) btn.disabled = true;
+  }
+}
+
+function abrirModalScanner(){
+  const modal   = document.getElementById("scanModal");
+  const destino = document.getElementById("scanDestino");
+  const nome    = document.getElementById("scanNome");
+  const prog    = document.getElementById("scanProgressArea");
+
+  // Mostra destino atual do explorador
+  const cam = S.exp.caminho ? S.exp.caminho : "(raiz)";
+  destino.textContent = `${S.exp.tipo} / ${cam}`;
+
+  // Reset
+  nome.value = "";
+  prog.style.display = "none";
+  document.getElementById("scanStatusDot").style.background = "#9B9890";
+  document.getElementById("scanStatusText").textContent = "Verificando…";
+  document.getElementById("scanStatusSub").textContent  = "";
+  document.getElementById("btnIniciarScan").disabled = true;
+
+  modal.classList.add("open");
+  verificarAgente();
+}
+
+function fecharModalScanner(){
+  document.getElementById("scanModal").classList.remove("open");
+}
+document.getElementById("scanModal").addEventListener("click",e=>{
+  if(e.target===document.getElementById("scanModal")) fecharModalScanner();
+});
+
+async function iniciarDigitalizacao(){
+  const nome    = document.getElementById("scanNome").value.trim();
+  const dpi     = document.getElementById("scanDpi").value;
+  const cor     = document.getElementById("scanCor").value;
+  const btnScan = document.getElementById("btnIniciarScan");
+  const prog    = document.getElementById("scanProgressArea");
+  const pIcon   = document.getElementById("scanProgressIcon");
+  const pText   = document.getElementById("scanProgressText");
+  const pSub    = document.getElementById("scanProgressSub");
+
+  // Nome automático se vazio
+  const nomeArquivo = nome
+    ? (nome.endsWith(".pdf") ? nome : nome + ".pdf")
+    : `scan_${new Date().toISOString().slice(0,19).replace(/[T:]/g,"-")}.pdf`;
+
+  // Atualiza config do agente com DPI e cor escolhidos
+  try{
+    await fetch(`${SCANNER_AGENT}/config`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({dpi: parseInt(dpi), color_mode: cor}),
+    });
+  }catch(e){}
+
+  // UI de progresso
+  btnScan.disabled = true;
+  btnScan.classList.add("scanning");
+  prog.style.display = "block";
+  pIcon.textContent  = "📠";
+  pText.textContent  = "Iniciando digitalização…";
+  pSub.textContent   = "Coloque o documento no scanner e aguarde.";
+
+  // Animação de progresso de texto
+  const msgs = [
+    "Comunicando com o scanner…",
+    "Digitalizando páginas…",
+    "Processando imagens…",
+    "Convertendo para PDF…",
+    "Enviando para o DocVault…",
+  ];
+  let msgIdx = 0;
+  const msgTimer = setInterval(()=>{
+    msgIdx = (msgIdx + 1) % msgs.length;
+    pText.textContent = msgs[msgIdx];
+  }, 2500);
+
+  try{
+    const res = await fetch(`${SCANNER_AGENT}/scan`,{
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        tipo:    S.exp.tipo,
+        caminho: S.exp.caminho,
+        nome:    nomeArquivo,
+      }),
+    });
+
+    clearInterval(msgTimer);
+    const data = await res.json();
+
+    if(data.ok){
+      pIcon.textContent = "✅";
+      pText.textContent = "Documento digitalizado com sucesso!";
+      pSub.textContent  = nomeArquivo;
+      toast("success", "Digitalização concluída!", nomeArquivo);
+      // Recarrega o explorador para mostrar o novo arquivo
+      await loadFiles();
+      loadExp(S.exp.tipo, S.exp.caminho);
+      loadDashboard();
+      setTimeout(fecharModalScanner, 2000);
+    } else {
+      pIcon.textContent = "❌";
+      pText.textContent = "Erro na digitalização";
+      pSub.textContent  = data.erro || "Tente novamente.";
+      toast("error", "Erro ao digitalizar", data.erro || "");
+      btnScan.disabled = false;
+      btnScan.classList.remove("scanning");
+    }
+  }catch(e){
+    clearInterval(msgTimer);
+    pIcon.textContent = "❌";
+    pText.textContent = "Falha de conexão com o agente";
+    pSub.textContent  = "Verifique se iniciar_scanner.bat está rodando.";
+    toast("error", "Agente offline", "Execute iniciar_scanner.bat");
+    btnScan.disabled = false;
+    btnScan.classList.remove("scanning");
+  }
+}
 
 init();
 </script>

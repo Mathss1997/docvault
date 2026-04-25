@@ -372,6 +372,66 @@ async def upload_explorer(
 # ─────────────────────────────────────────────
 # EXPLORAR
 # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# ADICIONE ESTE TRECHO AO SEU main.py
+# Cole logo após a rota /upload_explorer existente
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/upload_scanner")
+async def upload_scanner(
+    request:  Request,
+    file:     UploadFile = File(...),
+    tipo:     str = Form(...),
+    caminho:  str = Form(""),
+):
+    """
+    Endpoint chamado pelo Scanner Agent local.
+    Recebe o PDF digitalizado e salva no Supabase + banco.
+    Não exige sessão autenticada pois a chamada vem de localhost.
+    """
+    # Segurança: só aceita chamadas de localhost
+    client_ip = get_ip(request)
+    if client_ip not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(403, "Acesso permitido apenas de localhost")
+
+    conteudo = await file.read()
+    validate_file(file.filename, len(conteudo))
+
+    path_supabase = build_storage_path(tipo, caminho, file.filename)
+
+    try:
+        supabase.storage.from_("documentos").upload(
+            path=path_supabase,
+            file=conteudo,
+            file_options={"content-type": "application/pdf"},
+        )
+    except Exception as e:
+        log.error("Erro upload scanner %s: %s", path_supabase, e)
+        raise HTTPException(500, f"Erro ao enviar arquivo: {e}")
+
+    db = SessionLocal()
+    try:
+        db.add(Documento(
+            nome=file.filename,
+            categoria=tipo,
+            caminho=caminho,
+            usuario="scanner",          # identifica origem como scanner
+            data=str(datetime.now()),
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    registrar_log(
+        "scanner", "UPLOAD",
+        detalhe=file.filename,
+        contexto=f"{tipo}/{caminho}" if caminho else tipo,
+        ip=client_ip,
+    )
+
+    log.info("Scanner upload: %s → %s", file.filename, path_supabase)
+    return {"ok": True, "mensagem": f"Arquivo '{file.filename}' salvo com sucesso."}
+
 @app.get("/explorar")
 def explorar(request: Request, tipo: str, caminho: str = ""):
     current_user(request)
