@@ -5,862 +5,339 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DocVault — Gestão de Documentos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   TOKENS & RESET
-═══════════════════════════════════════════ */
 :root {
-  --bg:          #F7F6F3;
-  --surface:     #FFFFFF;
-  --surface-2:   #F0EEE9;
-  --border:      #E2DED7;
-  --text:        #1A1916;
-  --text-2:      #6B6760;
-  --text-3:      #9B9793;
-  --accent:      #2563EB;
-  --accent-soft: #EFF6FF;
-  --accent-2:    #0EA5E9;
-  --danger:      #DC2626;
-  --danger-soft: #FEF2F2;
-  --success:     #16A34A;
-  --success-soft:#F0FDF4;
-  --warn:        #D97706;
-  --warn-soft:   #FFFBEB;
-  --shadow-sm:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:   0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
-  --shadow-lg:   0 20px 48px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.06);
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   16px;
-  --sidebar-w:   240px;
-  --topbar-h:    60px;
-  --transition:  .18s cubic-bezier(.4,0,.2,1);
+  --bg:#F4F3EF;--surface:#FFFFFF;--surface-2:#EDECE8;--surface-3:#E4E2DC;
+  --border:#DDDAD2;--border-2:#CAC7BE;--text:#18170F;--text-2:#5C5A52;--text-3:#9B9890;
+  --accent:#1D6EF5;--accent-h:#1459CC;--accent-soft:#EBF2FF;--accent-text:#1243A8;
+  --teal:#0D9488;--teal-soft:#F0FDFA;--amber:#B45309;--amber-soft:#FFFBEB;
+  --rose:#BE123C;--rose-soft:#FFF1F2;--green:#15803D;--green-soft:#F0FDF4;
+  --violet:#6D28D9;--violet-soft:#F5F3FF;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.05);--shadow-sm:0 1px 4px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.05);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.14),0 6px 16px rgba(0,0,0,.07);
+  --shadow-xl:0 32px 80px rgba(0,0,0,.18);
+  --r-sm:6px;--r-md:10px;--r-lg:16px;--r-xl:22px;
+  --sidebar-w:232px;--topbar-h:58px;--ease:cubic-bezier(.4,0,.2,1);--t:.17s;
 }
-[data-theme="dark"] {
-  --bg:          #111110;
-  --surface:     #1C1B19;
-  --surface-2:   #252420;
-  --border:      #2E2D29;
-  --text:        #F5F4F0;
-  --text-2:      #A09D97;
-  --text-3:      #6B6760;
-  --accent-soft: #1E3A5F;
-  --danger-soft: #3B1010;
-  --success-soft:#0D2818;
-  --warn-soft:   #2D1F07;
+[data-theme="dark"]{
+  --bg:#111009;--surface:#1A1916;--surface-2:#222118;--surface-3:#2A2920;
+  --border:#302F26;--border-2:#3D3C32;--text:#F0EEE6;--text-2:#A09D92;--text-3:#6A6860;
+  --accent-soft:#0F2347;--accent-text:#93B8F8;--teal-soft:#042F2E;--amber-soft:#1C1106;
+  --rose-soft:#1F0A10;--green-soft:#052E14;--violet-soft:#1A0F38;
 }
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { font-size:15px; }
-body {
-  font-family:'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  transition: background var(--transition), color var(--transition);
-  display: flex;
-}
-a { color:inherit; text-decoration:none; }
-button { font-family:inherit; cursor:pointer; border:none; outline:none; }
-input, select, textarea { font-family:inherit; outline:none; }
-::-webkit-scrollbar { width:5px; height:5px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;-webkit-font-smoothing:antialiased;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;transition:background var(--t) var(--ease),color var(--t) var(--ease);}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;}
+input,select,textarea{font-family:inherit;outline:none;color:var(--text);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:99px;}
 
-/* ═══════════════════════════════════════════
-   SIDEBAR
-═══════════════════════════════════════════ */
-.sidebar {
-  width: var(--sidebar-w);
-  height: 100vh;
-  position: fixed;
-  top: 0; left: 0;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  z-index: 100;
-  transition: transform var(--transition), background var(--transition);
-}
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid var(--border);
-}
-.logo-icon {
-  width: 34px; height: 34px;
-  background: var(--text);
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-.logo-text { font-weight: 600; font-size: 15px; letter-spacing:-.3px; }
-.logo-badge {
-  font-size: 9px;
-  font-weight: 600;
-  background: var(--accent);
-  color: #fff;
-  padding: 2px 6px;
-  border-radius: 99px;
-  letter-spacing: .4px;
-  text-transform: uppercase;
-}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);height:100vh;position:fixed;top:0;left:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;transition:transform var(--t) var(--ease),background var(--t) var(--ease);}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:18px 18px 14px;border-bottom:1px solid var(--border);}
+.logo-mark{width:32px;height:32px;background:var(--text);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.logo-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;letter-spacing:-.3px;}
+.logo-ver{margin-left:auto;font-size:9px;font-weight:600;background:var(--accent);color:#fff;padding:2px 7px;border-radius:99px;letter-spacing:.5px;text-transform:uppercase;}
+.nav-group-label{padding:16px 16px 5px;font-size:10px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--text-3);}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;margin:1px 8px;border-radius:var(--r-sm);font-size:13.5px;font-weight:450;color:var(--text-2);cursor:pointer;transition:all var(--t) var(--ease);}
+.nav-item:hover{background:var(--surface-2);color:var(--text);}
+.nav-item.active{background:var(--accent);color:#fff;font-weight:500;}
+.nav-item .ni{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:600;padding:1px 7px;border-radius:99px;}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.25);color:#fff;}
+.sidebar-foot{margin-top:auto;padding:10px 8px;border-top:1px solid var(--border);}
+.user-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);}
+.user-av{width:28px;height:28px;background:var(--accent);border-radius:50%;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.user-name{font-size:13px;font-weight:500;}
+.user-role{font-size:11px;color:var(--text-3);}
 
-.sidebar-section {
-  padding: 20px 12px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .8px;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  margin: 1px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 450;
-  color: var(--text-2);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-.nav-item:hover { background: var(--surface-2); color: var(--text); }
-.nav-item.active {
-  background: var(--accent);
-  color: #fff;
-  font-weight: 500;
-}
-.nav-item .icon { font-size: 16px; width:20px; text-align:center; flex-shrink:0; }
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:90;}
+.topbar-l{display:flex;align-items:center;gap:10px;}
+.page-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.2px;}
+.topbar-r{display:flex;align-items:center;gap:7px;}
+.icon-btn{width:32px;height:32px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-2);transition:all var(--t);}
+.icon-btn:hover{background:var(--border);color:var(--text);}
+.content{padding:22px;flex:1;}
 
-.sidebar-footer {
-  margin-top: auto;
-  padding: 12px 8px;
-  border-top: 1px solid var(--border);
-}
-.user-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-}
-.user-avatar {
-  width: 30px; height: 30px;
-  background: var(--accent);
-  border-radius: 50%;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex; align-items:center; justify-content:center;
-  flex-shrink: 0;
-}
-.user-name { font-size: 13px; font-weight: 500; }
-.user-role { font-size: 11px; color: var(--text-3); }
+/* SECTIONS */
+.sec{display:none;animation:secIn .2s var(--ease);}
+.sec.on{display:block;}
+@keyframes secIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
-/* ═══════════════════════════════════════════
-   MAIN
-═══════════════════════════════════════════ */
-.main {
-  margin-left: var(--sidebar-w);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-.topbar {
-  height: var(--topbar-h);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  position: sticky;
-  top: 0;
-  z-index: 90;
-}
-.topbar-left { display:flex; align-items:center; gap:12px; }
-.page-title { font-size: 15px; font-weight: 600; letter-spacing:-.2px; }
-.topbar-right { display:flex; align-items:center; gap:8px; }
+/* PANELS */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px;}
+.panel-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.panel-title{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:600;letter-spacing:-.1px;}
+.panel-bd{padding:16px;}
 
-.btn-icon {
-  width: 34px; height: 34px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  display: flex; align-items:center; justify-content:center;
-  font-size: 15px;
-  color: var(--text-2);
-  transition: all var(--transition);
-}
-.btn-icon:hover { background: var(--border); color: var(--text); }
+/* STAT */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px;display:flex;align-items:flex-start;gap:12px;transition:box-shadow var(--t);}
+.stat-card:hover{box-shadow:var(--shadow-md);}
+.stat-ico{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.ico-blue{background:var(--accent-soft);}.ico-teal{background:var(--teal-soft);}.ico-amber{background:var(--amber-soft);}.ico-violet{background:var(--violet-soft);}
+.stat-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1;}
+.stat-lbl{font-size:11.5px;color:var(--text-2);margin-top:3px;}
 
-.content { padding: 24px; flex:1; max-width: 1200px; }
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r-sm);font-size:13px;font-weight:500;transition:all var(--t);white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:var(--accent-h);}
+.btn-ghost{background:var(--surface-2);color:var(--text-2);border:1px solid var(--border);}.btn-ghost:hover{background:var(--border);color:var(--text);}
+.btn-teal{background:var(--teal);color:#fff;}.btn-teal:hover{opacity:.88;}
+.btn-rose{background:var(--rose-soft);color:var(--rose);}.btn-rose:hover{opacity:.8;}
+.btn-amber{background:var(--amber-soft);color:var(--amber);}.btn-amber:hover{opacity:.8;}
+.btn-sm{padding:5px 10px;font-size:12px;}.btn-xs{padding:3px 8px;font-size:11px;}
+.btn[disabled]{opacity:.4;pointer-events:none;}
 
-/* ═══════════════════════════════════════════
-   SECTIONS
-═══════════════════════════════════════════ */
-.section { display:none; animation: fadeIn .22s ease; }
-.section.active { display:block; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+/* FORM */
+.frow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+.fgroup{display:flex;flex-direction:column;gap:5px;}
+.flabel{font-size:11.5px;font-weight:500;color:var(--text-2);letter-spacing:.1px;}
+.finput{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 11px;font-size:13.5px;color:var(--text);width:100%;transition:border-color var(--t);}
+.finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.finput-sm{padding:6px 9px;font-size:12.5px;}
+select.finput{cursor:pointer;}
+textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 
-/* ═══════════════════════════════════════════
-   CARDS / STAT GRID
-═══════════════════════════════════════════ */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  transition: box-shadow var(--transition);
-}
-.stat-card:hover { box-shadow: var(--shadow-md); }
-.stat-icon {
-  width: 38px; height: 38px;
-  border-radius: var(--radius-sm);
-  display: flex; align-items:center; justify-content:center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.stat-icon.blue   { background: var(--accent-soft); }
-.stat-icon.green  { background: var(--success-soft); }
-.stat-icon.amber  { background: var(--warn-soft); }
-.stat-icon.slate  { background: var(--surface-2); }
-.stat-number { font-size: 26px; font-weight: 600; letter-spacing:-1px; line-height:1; }
-.stat-label  { font-size: 12px; color: var(--text-2); margin-top:3px; }
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{text-align:left;padding:9px 13px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);background:var(--surface-2);border-bottom:1px solid var(--border);}
+.tbl td{padding:10px 13px;font-size:13.5px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surface-2);}
+.tbl .cat-row td{background:var(--surface-2);font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text-2);padding:6px 13px;}
 
-/* ═══════════════════════════════════════════
-   PANEL / CARD
-═══════════════════════════════════════════ */
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-.panel-header {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.panel-title { font-size: 14px; font-weight: 600; letter-spacing:-.2px; }
-.panel-body { padding: 18px; }
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b-blue{background:var(--accent-soft);color:var(--accent-text);}.b-teal{background:var(--teal-soft);color:var(--teal);}
+.b-amber{background:var(--amber-soft);color:var(--amber);}.b-rose{background:var(--rose-soft);color:var(--rose);}
+.b-green{background:var(--green-soft);color:var(--green);}.b-violet{background:var(--violet-soft);color:var(--violet);}
+.b-slate{background:var(--surface-2);color:var(--text-2);}
 
-/* ═══════════════════════════════════════════
-   TABELA
-═══════════════════════════════════════════ */
-.data-table { width:100%; border-collapse:collapse; }
-.data-table th {
-  text-align:left;
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing:.5px;
-  text-transform:uppercase;
-  color: var(--text-3);
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-}
-.data-table td {
-  padding: 11px 14px;
-  font-size: 13.5px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-.data-table tr:last-child td { border-bottom:none; }
-.data-table tr:hover td { background: var(--surface-2); }
-.data-table .category-row td {
-  background: var(--surface-2);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing:.5px;
-  text-transform:uppercase;
-  color: var(--text-2);
-  padding: 7px 14px;
-}
+/* TAG WIDGET */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:5px;border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;background:var(--surface);cursor:text;min-height:38px;align-items:center;transition:border-color var(--t);}
+.tag-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--accent-text);padding:3px 8px;border-radius:99px;font-size:11.5px;font-weight:500;animation:chipIn .15s var(--ease);}
+@keyframes chipIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.tag-chip-rm{background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:13px;line-height:1;padding:0 1px;opacity:.6;}
+.tag-chip-rm:hover{opacity:1;}
+.tag-input{border:none;outline:none;background:transparent;font-size:13px;color:var(--text);min-width:80px;flex:1;}
+.tag-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--shadow-md);z-index:999;overflow:hidden;display:none;}
+.tag-suggestions.open{display:block;animation:secIn .12s var(--ease);}
+.tag-sug-item{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--text-2);transition:background var(--t);}
+.tag-sug-item:hover{background:var(--surface-2);color:var(--text);}
 
-/* ═══════════════════════════════════════════
-   BOTÕES
-═══════════════════════════════════════════ */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 500;
-  transition: all var(--transition);
-  white-space: nowrap;
-}
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-}
-.btn-primary:hover { opacity:.88; }
-.btn-ghost {
-  background: var(--surface-2);
-  color: var(--text-2);
-  border: 1px solid var(--border);
-}
-.btn-ghost:hover { background: var(--border); color:var(--text); }
-.btn-danger-ghost {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-.btn-danger-ghost:hover { opacity:.8; }
-.btn-sm { padding: 5px 10px; font-size:12px; }
-.btn[disabled] { opacity:.45; pointer-events:none; }
+/* EXPLORADOR */
+.exp-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+.breadcrumb{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-2);flex-wrap:wrap;padding:6px 0;}
+.bc-item{cursor:pointer;transition:color var(--t);}.bc-item:hover{color:var(--accent);text-decoration:underline;}
+.bc-sep{color:var(--text-3);}
+.drop-zone{border:2px dashed var(--border-2);border-radius:var(--r-md);padding:28px;text-align:center;color:var(--text-3);font-size:13.5px;cursor:pointer;transition:all var(--t);margin-bottom:14px;}
+.drop-zone:hover,.drop-zone.dov{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px;}
+.fi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 10px;text-align:center;cursor:pointer;transition:all var(--t);position:relative;user-select:none;}
+.fi:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.fi-icon{font-size:28px;margin-bottom:7px;display:block;}
+.fi-name{font-size:11.5px;color:var(--text-2);word-break:break-word;line-height:1.4;}
+.upload-list{display:flex;flex-direction:column;gap:5px;margin-top:8px;}
+.upload-row{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 11px;font-size:13px;}
+.up-bar{width:70px;height:3px;background:var(--border);border-radius:99px;overflow:hidden;flex-shrink:0;}
+.up-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .3s;}
 
-/* ═══════════════════════════════════════════
-   FORM ELEMENTS
-═══════════════════════════════════════════ */
-.form-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.input {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 13.5px;
-  color: var(--text);
-  transition: border-color var(--transition);
-  width: 100%;
-}
-.input:focus { border-color: var(--accent); }
-.input-sm { padding: 6px 10px; font-size:13px; }
-select.input { cursor:pointer; }
-.form-group { display:flex; flex-direction:column; gap:5px; }
-.form-label { font-size:12px; font-weight:500; color:var(--text-2); }
+/* INDEXADORES */
+.idx-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+.idx-search-wrap{flex:1;min-width:240px;position:relative;}
+.idx-search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-3);pointer-events:none;}
+.idx-search{padding-left:34px !important;}
+.adv-filters{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:16px;overflow:hidden;}
+.adv-filters-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;user-select:none;transition:background var(--t);}
+.adv-filters-hd:hover{background:var(--surface-2);}
+.adv-filters-hd .af-title{font-size:13px;font-weight:500;color:var(--text-2);}
+.adv-filters-hd .chevron{font-size:12px;color:var(--text-3);transition:transform var(--t);}
+.adv-filters-hd.open .chevron{transform:rotate(180deg);}
+.adv-filters-body{padding:16px;border-top:1px solid var(--border);display:none;}
+.adv-filters-body.open{display:block;animation:secIn .15s var(--ease);}
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.idx-result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;transition:box-shadow var(--t),border-color var(--t);cursor:pointer;}
+.idx-result-card:hover{box-shadow:var(--shadow-md);border-color:var(--border-2);}
+.idx-file-ico{width:40px;height:40px;border-radius:var(--r-sm);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.idx-info{flex:1;min-width:0;}
+.idx-filename{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.idx-meta{font-size:12px;color:var(--text-3);margin-top:3px;}
+.idx-fields{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.idx-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.idx-actions{display:flex;gap:6px;flex-shrink:0;align-items:flex-start;}
 
-/* ═══════════════════════════════════════════
-   EXPLORADOR
-═══════════════════════════════════════════ */
-.explorer-toolbar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-2);
-  padding: 8px 0;
-  flex-wrap: wrap;
-}
-.breadcrumb-item { cursor:pointer; }
-.breadcrumb-item:hover { color: var(--accent); text-decoration:underline; }
-.breadcrumb-sep { color: var(--text-3); }
+/* MODAL PDF */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(10,10,8,.75);backdrop-filter:blur(5px);z-index:9000;align-items:center;justify-content:center;}
+.modal-ov.open{display:flex;}
+.modal-box{background:#1A1916;border-radius:var(--r-xl);width:98vw;height:95vh;max-width:1200px;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-xl);animation:mIn .18s var(--ease);}
+@keyframes mIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #2A2926;flex-shrink:0;}
+.modal-fn{font-family:'DM Mono',monospace;font-size:13px;color:#B0ADA4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;}
+.modal-acts{display:flex;gap:6px;}
+.m-btn{padding:5px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:none;}
+.m-btn-ghost{background:#2A2926;color:#B0ADA4;}.m-btn-ghost:hover{background:#3A3930;}
+.m-btn-idx{background:#0F2D4A;color:#60A5FA;}.m-btn-idx.active{background:var(--accent);color:#fff;}
+.m-btn-close{background:#3B1010;color:#FCA5A5;}
+.modal-body{flex:1;display:flex;overflow:hidden;}
+.pdf-thumbs{width:110px;min-width:110px;background:#111009;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.pdf-thumb{border:2px solid transparent;border-radius:var(--r-sm);overflow:hidden;cursor:pointer;transition:border-color var(--t);}
+.pdf-thumb.act{border-color:var(--accent);}
+.pdf-thumb canvas{display:block;width:100%;}
+.pdf-viewer{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:18px;background:#2E2C28;}
+.pdf-viewer canvas{box-shadow:0 6px 28px rgba(0,0,0,.5);}
+.pdf-load{display:flex;align-items:center;justify-content:center;height:100%;gap:10px;color:#6A6860;font-size:13.5px;}
+.idx-panel{width:0;min-width:0;overflow:hidden;background:#1A1916;border-left:1px solid #2A2926;transition:width .25s var(--ease),min-width .25s var(--ease);display:flex;flex-direction:column;}
+.idx-panel.open{width:340px;min-width:340px;}
+.idx-panel-inner{width:340px;display:flex;flex-direction:column;height:100%;}
+.idx-panel-hd{padding:12px 14px;border-bottom:1px solid #2A2926;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.idx-panel-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#D0CEC6;}
+.idx-panel-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:11px;}
+.idx-panel-ft{padding:12px 14px;border-top:1px solid #2A2926;display:flex;gap:8px;flex-shrink:0;}
+.idx-panel .flabel{color:#7A7870;}
+.idx-panel .finput{background:#111009;border-color:#2A2926;color:#D0CEC6;font-size:13px;}
+.idx-panel .finput:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(29,110,245,.2);}
+.idx-panel .tag-wrap{background:#111009;border-color:#2A2926;}
+.idx-panel .tag-input{color:#D0CEC6;}
+.idx-panel .tag-chip{background:#0F2347;color:#93B8F8;}
+.idx-panel .tag-chip-rm{color:#93B8F8;}
+.idx-panel .tag-suggestions{background:#1A1916;border-color:#2A2926;}
+.idx-panel .tag-sug-item{color:#A09D92;}.idx-panel .tag-sug-item:hover{background:#222118;color:#D0CEC6;}
+.idx-section-label{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4A4840;padding:4px 0;border-bottom:1px solid #2A2926;margin-bottom:4px;}
 
-/* drop zone */
-.drop-zone {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-md);
-  padding: 32px;
-  text-align: center;
-  color: var(--text-3);
-  font-size: 13.5px;
-  cursor: pointer;
-  transition: all var(--transition);
-  margin-bottom: 16px;
-}
-.drop-zone:hover, .drop-zone.dragover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.drop-zone-icon { font-size: 28px; margin-bottom: 8px; }
+/* MODAL INDEXADOR STANDALONE */
+.sidx-ov{display:none;position:fixed;inset:0;background:rgba(10,10,8,.65);backdrop-filter:blur(4px);z-index:9100;align-items:center;justify-content:center;}
+.sidx-ov.open{display:flex;animation:secIn .15s var(--ease);}
+.sidx-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);width:96vw;max-width:640px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl);animation:mIn .18s var(--ease);}
+.sidx-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sidx-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.sidx-body{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:13px;}
+.sidx-ft{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+.fields-section-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);padding:6px 0 2px;border-bottom:1px solid var(--border);}
 
-/* file grid */
-.file-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-}
-.file-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px 12px;
-  text-align: center;
-  cursor: pointer;
-  transition: all var(--transition);
-  position: relative;
-  user-select: none;
-}
-.file-item:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-.file-item.selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.file-item-icon { font-size: 32px; margin-bottom: 8px; display:block; }
-.file-item-name {
-  font-size: 11.5px;
-  color: var(--text-2);
-  word-break: break-word;
-  line-height: 1.4;
-}
+/* TOASTS */
+.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:99999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+.toast{background:var(--text);color:var(--bg);padding:11px 14px;border-radius:var(--r-md);font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:9px;min-width:250px;max-width:340px;box-shadow:var(--shadow-lg);pointer-events:all;animation:toastIn .18s var(--ease);transition:opacity .18s,transform .18s;}
+.toast.out{opacity:0;transform:translateX(16px);}
+@keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.t-ico{font-size:15px;flex-shrink:0;}.t-body{flex:1;}.t-title{font-weight:600;}.t-msg{font-size:11.5px;opacity:.65;margin-top:1px;}
 
-/* upload progress list */
-.upload-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-.upload-entry {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  font-size: 13px;
-}
-.upload-status { font-size:16px; flex-shrink:0; }
-.upload-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.upload-bar-wrap {
-  width: 80px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 99px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.upload-bar-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 99px;
-  transition: width .3s;
-}
+/* CONTEXT MENU */
+.ctx{position:fixed;display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--shadow-lg);padding:4px;min-width:164px;z-index:9999;}
+.ctx.open{display:block;animation:secIn .1s var(--ease);}
+.ctx-i{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:var(--r-sm);font-size:13px;cursor:pointer;color:var(--text-2);width:100%;background:none;border:none;font-family:inherit;text-align:left;transition:background var(--t);}
+.ctx-i:hover{background:var(--surface-2);color:var(--text);}
+.ctx-i.danger{color:var(--rose);}.ctx-i.danger:hover{background:var(--rose-soft);}
+.ctx-sep{height:1px;background:var(--border);margin:3px 0;}
 
-/* ═══════════════════════════════════════════
-   DONUT CHART (CSS)
-═══════════════════════════════════════════ */
-.chart-wrap {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-.donut-svg { flex-shrink:0; }
-.chart-legend { display:flex; flex-direction:column; gap:8px; }
-.legend-item {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:13px;
-}
-.legend-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+/* SPINNER / EMPTY */
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0;}
+.spin-lg{width:30px;height:30px;border-width:3px;}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:44px 20px;color:var(--text-3);}
+.empty-ico{font-size:36px;margin-bottom:10px;}
+.empty h4{font-size:14.5px;color:var(--text-2);margin-bottom:5px;}
+.empty p{font-size:13px;}
 
-/* ═══════════════════════════════════════════
-   MODAL PDF
-═══════════════════════════════════════════ */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.7);
-  backdrop-filter: blur(4px);
-  z-index: 9000;
-  align-items: center;
-  justify-content: center;
-}
-.modal-overlay.open { display:flex; }
-.modal-box {
-  background: #1A1916;
-  border-radius: var(--radius-lg);
-  width: 96vw;
-  height: 94vh;
-  max-width: 1100px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  animation: modalIn .2s ease;
-}
-@keyframes modalIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
-.modal-topbar {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #2E2D29;
-  flex-shrink: 0;
-}
-.modal-filename {
-  font-size:13.5px;
-  color: #C9C7C0;
-  font-family: 'DM Mono', monospace;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  max-width: 500px;
-}
-.modal-actions { display:flex; gap:8px; }
-.modal-btn {
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-size:12.5px;
-  font-weight:500;
-  cursor:pointer;
-  border:none;
-  font-family:inherit;
-}
-.modal-btn-ghost {
-  background: #2E2D29;
-  color: #C9C7C0;
-}
-.modal-btn-close {
-  background: #3B1010;
-  color: #FC8181;
-}
-.modal-body {
-  flex:1;
-  display:flex;
-  overflow:hidden;
-}
-.pdf-thumbs {
-  width: 120px;
-  min-width:120px;
-  background: #141312;
-  overflow-y: auto;
-  padding: 10px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-.pdf-thumb {
-  border: 2px solid transparent;
-  border-radius: var(--radius-sm);
-  overflow:hidden;
-  cursor:pointer;
-  transition: border-color var(--transition);
-}
-.pdf-thumb.active { border-color: var(--accent); }
-.pdf-thumb canvas { display:block; width:100%; }
-.pdf-viewer {
-  flex:1;
-  overflow: auto;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  padding: 20px;
-  background: #333230;
-}
-.pdf-viewer canvas { box-shadow: 0 8px 32px rgba(0,0,0,.4); }
-.pdf-loading {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100%;
-  color: #6B6760;
-  font-size:14px;
-  gap:10px;
-}
+/* RECENT */
+.recent-item{display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:1px solid var(--border);transition:background var(--t);cursor:pointer;}
+.recent-item:last-child{border-bottom:none;}
+.recent-item:hover{background:var(--surface-2);}
+.rec-thumb{width:32px;height:32px;background:var(--surface-2);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.rec-info{flex:1;min-width:0;}
+.rec-name{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-meta{font-size:11.5px;color:var(--text-3);margin-top:2px;}
+.rec-time{font-size:11.5px;color:var(--text-3);flex-shrink:0;}
+.chart-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.chart-legend{display:flex;flex-direction:column;gap:7px;}
+.leg-item{display:flex;align-items:center;gap:7px;font-size:12.5px;}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 
-/* ═══════════════════════════════════════════
-   TOASTS
-═══════════════════════════════════════════ */
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 99999;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  pointer-events:none;
-}
-.toast {
-  background: var(--text);
-  color: var(--bg);
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
-  font-weight: 500;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-width: 260px;
-  max-width: 360px;
-  box-shadow: var(--shadow-lg);
-  pointer-events: all;
-  animation: toastIn .2s ease;
-  transition: opacity .2s, transform .2s;
-}
-.toast.hide { opacity:0; transform:translateX(20px); }
-@keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
-.toast-icon { font-size:16px; flex-shrink:0; }
-.toast-body { flex:1; }
-.toast-title { font-weight:600; }
-.toast-msg { font-size:12px; opacity:.7; margin-top:1px; }
-.toast.success .toast-icon::before { content:'✓'; color: #4ADE80; }
-.toast.error .toast-icon::before { content:'✕'; color: #F87171; }
-.toast.info .toast-icon::before { content:'i'; color: #60A5FA; font-style:italic; }
-.toast.warn .toast-icon::before { content:'!'; color: #FCD34D; }
-
-/* ═══════════════════════════════════════════
-   CONTEXT MENU
-═══════════════════════════════════════════ */
-.ctx-menu {
-  position: fixed;
-  display: none;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  padding: 4px;
-  min-width: 160px;
-  z-index: 9999;
-}
-.ctx-menu.open { display:block; animation: fadeIn .12s ease; }
-.ctx-item {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  font-size:13px;
-  cursor:pointer;
-  color: var(--text-2);
-  width:100%;
-  background:none;
-  border:none;
-  font-family:inherit;
-  text-align:left;
-}
-.ctx-item:hover { background: var(--surface-2); color: var(--text); }
-.ctx-item.danger { color: var(--danger); }
-.ctx-item.danger:hover { background: var(--danger-soft); }
-.ctx-sep { height:1px; background: var(--border); margin: 3px 0; }
-
-/* ═══════════════════════════════════════════
-   BADGE
-═══════════════════════════════════════════ */
-.badge {
-  display:inline-flex;
-  align-items:center;
-  padding: 2px 8px;
-  border-radius:99px;
-  font-size:11px;
-  font-weight:600;
-}
-.badge-blue { background:var(--accent-soft); color:var(--accent); }
-.badge-green { background:var(--success-soft); color:var(--success); }
-
-/* ═══════════════════════════════════════════
-   EMPTY STATE
-═══════════════════════════════════════════ */
-.empty-state {
-  text-align:center;
-  padding: 48px 24px;
-  color: var(--text-3);
-}
-.empty-state-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-state h4 { font-size:15px; color:var(--text-2); margin-bottom:6px; }
-.empty-state p { font-size:13px; }
-
-/* ═══════════════════════════════════════════
-   SPINNER
-═══════════════════════════════════════════ */
-.spinner {
-  width:18px; height:18px;
-  border:2px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius:50%;
-  animation: spin .7s linear infinite;
-  flex-shrink:0;
-}
-.spinner-lg {
-  width:32px; height:32px;
-  border-width:3px;
-}
-@keyframes spin { to{transform:rotate(360deg)} }
-
-/* ═══════════════════════════════════════════
-   RECENT LIST (dashboard)
-═══════════════════════════════════════════ */
-.recent-list { display:flex; flex-direction:column; }
-.recent-item {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding: 11px 18px;
-  border-bottom: 1px solid var(--border);
-  transition: background var(--transition);
-  cursor:pointer;
-}
-.recent-item:last-child { border-bottom:none; }
-.recent-item:hover { background: var(--surface-2); }
-.recent-thumb {
-  width:34px; height:34px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  display:flex; align-items:center; justify-content:center;
-  font-size:16px;
-  flex-shrink:0;
-}
-.recent-info { flex:1; min-width:0; }
-.recent-name { font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.recent-meta { font-size:12px; color:var(--text-3); margin-top:2px; }
-.recent-time { font-size:12px; color:var(--text-3); flex-shrink:0; }
-
-/* ═══════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════ */
-.menu-toggle { display:none; }
-@media (max-width: 768px) {
-  .menu-toggle { display:flex; }
-  .sidebar {
-    transform: translateX(-100%);
-    z-index: 200;
-    box-shadow: var(--shadow-lg);
-  }
-  .sidebar.open { transform: translateX(0); }
-  .main { margin-left: 0; }
-  .sidebar-overlay {
-    display:none;
-    position:fixed; inset:0;
-    background:rgba(0,0,0,.4);
-    z-index:199;
-  }
-  .sidebar-overlay.open { display:block; }
-  .content { padding: 16px; }
-  .stat-grid { grid-template-columns: 1fr 1fr; }
+/* RESPONSIVE */
+.menu-tog{display:none;}
+.sidebar-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;}
+.sidebar-ov.open{display:block;}
+@media(max-width:768px){
+  .menu-tog{display:flex;}
+  .sidebar{transform:translateX(-100%);z-index:200;box-shadow:var(--shadow-lg);}
+  .sidebar.open{transform:none;}
+  .main{margin-left:0;}
+  .content{padding:14px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .idx-panel.open{width:280px;min-width:280px;}
+  .idx-panel-inner{width:280px;}
 }
 </style>
 </head>
-
 <body>
 
-<!-- ══════════════ SIDEBAR ══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon">🔐</div>
-    <div>
-      <div class="logo-text">DocVault</div>
-    </div>
-    <span class="logo-badge">Pro</span>
+    <div class="logo-mark">🔐</div>
+    <span class="logo-name">DocVault</span>
+    <span class="logo-ver">Pro</span>
   </div>
-
-  <div class="sidebar-section">Menu</div>
+  <div class="nav-group-label">Menu</div>
   <nav>
-    <div class="nav-item active" onclick="showSection('sec-dashboard',this)">
-      <span class="icon">◈</span> Dashboard
-    </div>
-    <div class="nav-item" onclick="showSection('sec-documentos',this)">
-      <span class="icon">◻</span> Documentos
-    </div>
-    <div class="nav-item" onclick="showSection('sec-explorador',this)">
-      <span class="icon">⊞</span> Explorador
-    </div>
-    <div class="nav-item" id="nav-usuarios" style="display:none" onclick="showSection('sec-usuarios',this)">
-      <span class="icon">⊙</span> Usuários
-    </div>
+    <div class="nav-item active" onclick="showSec('sec-dash',this)"><span class="ni">◈</span> Dashboard</div>
+    <div class="nav-item" onclick="showSec('sec-docs',this)"><span class="ni">◻</span> Documentos</div>
+    <div class="nav-item" onclick="showSec('sec-exp',this)"><span class="ni">⊞</span> Explorador</div>
+    <div class="nav-item" onclick="showSec('sec-idx',this)"><span class="ni">⊛</span> Indexadores<span class="nav-badge" id="idxBadge">0</span></div>
+    <div class="nav-item" id="nav-users" style="display:none" onclick="showSec('sec-users',this)"><span class="ni">⊙</span> Usuários</div>
   </nav>
-
-  <div class="sidebar-footer">
+  <div class="sidebar-foot">
     <div class="user-chip">
-      <div class="user-avatar" id="userAvatar">?</div>
-      <div>
-        <div class="user-name" id="userName">—</div>
-        <div class="user-role" id="userRole">—</div>
-      </div>
+      <div class="user-av" id="userAv">?</div>
+      <div><div class="user-name" id="userName">—</div><div class="user-role" id="userRole">—</div></div>
     </div>
   </div>
 </aside>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar-ov" id="sidebarOv" onclick="closeSidebar()"></div>
 
-<!-- ══════════════ MAIN ══════════════ -->
 <div class="main">
   <header class="topbar">
-    <div class="topbar-left">
-      <button class="btn-icon menu-toggle" onclick="openSidebar()">☰</button>
+    <div class="topbar-l">
+      <button class="icon-btn menu-tog" onclick="openSidebar()">☰</button>
       <span class="page-title" id="pageTitle">Dashboard</span>
     </div>
-    <div class="topbar-right">
-      <button class="btn-icon" onclick="toggleTheme()" title="Alternar tema" id="themeBtn">🌙</button>
+    <div class="topbar-r">
+      <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
       <a href="/logout"><button class="btn btn-ghost btn-sm">Sair</button></a>
     </div>
   </header>
 
   <div class="content">
 
-    <!-- ─── DASHBOARD ─── -->
-    <div id="sec-dashboard" class="section active">
-      <div class="stat-grid" id="statGrid">
-        <div class="stat-card">
-          <div class="stat-icon blue">📁</div>
-          <div><div class="stat-number" id="statTotal">—</div><div class="stat-label">Total de arquivos</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon green">📂</div>
-          <div><div class="stat-number" id="statCats">—</div><div class="stat-label">Categorias</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon amber">🕐</div>
-          <div><div class="stat-number" id="statRecentes">—</div><div class="stat-label">Recentes</div></div>
-        </div>
+    <!-- DASHBOARD -->
+    <div id="sec-dash" class="sec on">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-ico ico-blue">📁</div><div><div class="stat-num" id="sTotal">—</div><div class="stat-lbl">Total de arquivos</div></div></div>
+        <div class="stat-card"><div class="stat-ico ico-teal">⊛</div><div><div class="stat-num" id="sIdx">—</div><div class="stat-lbl">Indexados</div></div></div>
+        <div class="stat-card"><div class="stat-ico ico-amber">📂</div><div><div class="stat-num" id="sCats">—</div><div class="stat-lbl">Categorias</div></div></div>
+        <div class="stat-card"><div class="stat-ico ico-violet">🕐</div><div><div class="stat-num" id="sRec">—</div><div class="stat-lbl">Recentes</div></div></div>
       </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;" id="dashGridCols">
-        <div class="panel">
-          <div class="panel-header"><span class="panel-title">Distribuição</span></div>
-          <div class="panel-body" id="chartArea">
-            <div class="pdf-loading"><div class="spinner"></div> Carregando…</div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-header"><span class="panel-title">Atividade recente</span></div>
-          <div class="recent-list" id="recentList">
-            <div class="pdf-loading" style="padding:24px"><div class="spinner"></div></div>
-          </div>
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" id="dashGrid">
+        <div class="panel"><div class="panel-hd"><span class="panel-title">Distribuição</span></div><div class="panel-bd" id="chartArea"><div class="pdf-load"><div class="spin"></div></div></div></div>
+        <div class="panel"><div class="panel-hd"><span class="panel-title">Atividade recente</span></div><div id="recentList"><div class="pdf-load" style="padding:24px"><div class="spin"></div></div></div></div>
       </div>
     </div>
 
-    <!-- ─── DOCUMENTOS ─── -->
-    <div id="sec-documentos" class="section">
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-body" style="padding:12px 14px;">
-          <div class="form-row">
-            <input type="text" class="input input-sm" id="searchInput" placeholder="Buscar documentos…" style="flex:1; min-width:200px;" oninput="filterTable()">
-            <select class="input input-sm" id="catFilter" onchange="filterTable()" style="width:180px;">
+    <!-- DOCUMENTOS -->
+    <div id="sec-docs" class="sec">
+      <div class="panel" style="margin-bottom:12px;">
+        <div class="panel-bd" style="padding:10px 13px;">
+          <div class="frow">
+            <input type="text" class="finput finput-sm" id="docSearch" placeholder="Buscar documentos…" style="flex:1;min-width:200px;" oninput="renderDocTable()">
+            <select class="finput finput-sm" id="docCatFilter" onchange="renderDocTable()" style="width:180px;">
               <option value="">Todas as categorias</option>
               <option value="empenhos">Empenhos</option>
               <option value="licitacoes">Licitações</option>
@@ -869,797 +346,722 @@ select.input { cursor:pointer; }
           </div>
         </div>
       </div>
-
       <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Todos os documentos</span>
-          <span class="badge badge-blue" id="docCount">0 arquivos</span>
-        </div>
+        <div class="panel-hd"><span class="panel-title">Todos os documentos</span><span class="badge b-blue" id="docCount">0 arquivos</span></div>
         <div style="overflow-x:auto;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Categoria</th>
-                <th>Enviado por</th>
-                <th>Data</th>
-                <th style="width:130px;">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="docTableBody">
-              <tr><td colspan="5">
-                <div class="pdf-loading" style="padding:32px"><div class="spinner"></div></div>
-              </td></tr>
-            </tbody>
+          <table class="tbl">
+            <thead><tr><th>Nome</th><th>Categoria</th><th>Indexado</th><th>Enviado por</th><th>Data</th><th style="width:140px;">Ações</th></tr></thead>
+            <tbody id="docTbody"><tr><td colspan="6"><div class="pdf-load" style="padding:32px"><div class="spin"></div></div></td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ─── EXPLORADOR ─── -->
-    <div id="sec-explorador" class="section">
-      <div class="explorer-toolbar">
-        <select class="input input-sm" id="explorerTipo" onchange="loadExplorer(this.value,'')" style="width:160px;">
+    <!-- EXPLORADOR -->
+    <div id="sec-exp" class="sec">
+      <div class="exp-toolbar">
+        <select class="finput finput-sm" id="expTipo" onchange="loadExp(this.value,'')" style="width:155px;">
           <option value="empenhos">Empenhos</option>
           <option value="licitacoes">Licitações</option>
           <option value="contratos">Contratos</option>
         </select>
         <button class="btn btn-ghost btn-sm" onclick="goBack()">← Voltar</button>
-
         <div style="flex:1"></div>
-
-        <input type="text" class="input input-sm" id="newFolderInput" placeholder="Nome da pasta…" style="width:170px;">
+        <input type="text" class="finput finput-sm" id="newFolderInp" placeholder="Nome da pasta…" style="width:165px;">
         <button class="btn btn-ghost btn-sm" onclick="createFolder()">➕ Criar pasta</button>
       </div>
-
-      <!-- breadcrumb -->
       <div class="breadcrumb" id="breadcrumb"></div>
-
-      <!-- drop zone -->
-      <div class="drop-zone" id="dropZone"
-           ondragover="onDragOver(event)"
-           ondragleave="onDragLeave(event)"
-           ondrop="onDrop(event)"
-           onclick="document.getElementById('explorerFile').click()">
-        <div class="drop-zone-icon">📤</div>
-        Arraste arquivos aqui ou <strong>clique para selecionar</strong><br>
-        <small style="margin-top:4px;display:block;">PDF, DOCX, XLSX, PNG, JPG — máx. 20 MB cada</small>
+      <div class="drop-zone" id="dropZone" ondragover="onDov(event)" ondragleave="onDol(event)" ondrop="onDrop(event)" onclick="document.getElementById('expFile').click()">
+        <div style="font-size:26px;margin-bottom:6px;">📤</div>
+        Arraste arquivos ou <strong>clique para selecionar</strong><br>
+        <small style="margin-top:3px;display:block;">PDF, DOCX, XLSX, PNG, JPG — máx. 20 MB</small>
       </div>
-      <input type="file" id="explorerFile" multiple style="display:none" onchange="handleFileSelect(this.files)">
-
-      <!-- upload list -->
+      <input type="file" id="expFile" multiple style="display:none" onchange="handleFiles(this.files)">
       <div class="upload-list" id="uploadList"></div>
+      <div class="file-grid" id="fileGrid"><div style="grid-column:1/-1"><div class="pdf-load" style="padding:48px"><div class="spin spin-lg"></div></div></div></div>
+    </div>
 
-      <!-- file grid -->
-      <div class="file-grid" id="fileGrid">
-        <div style="grid-column:1/-1">
-          <div class="pdf-loading" style="padding:48px"><div class="spinner spinner-lg"></div></div>
+    <!-- INDEXADORES -->
+    <div id="sec-idx" class="sec">
+      <div class="idx-toolbar">
+        <div class="idx-search-wrap">
+          <span class="idx-search-ico">🔍</span>
+          <input type="text" class="finput idx-search" id="idxQ" placeholder="Buscar por nome, assunto, número…" oninput="debounceSearch()">
         </div>
+        <select class="finput finput-sm" id="idxCat" onchange="runSearch()" style="width:165px;">
+          <option value="">Todas as categorias</option>
+          <option value="empenhos">Empenhos</option>
+          <option value="licitacoes">Licitações</option>
+          <option value="contratos">Contratos</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="toggleAdvFilters()">⚙ Filtros avançados</button>
+        <button class="btn btn-teal btn-sm" onclick="runSearch()">Buscar</button>
+      </div>
+
+      <div class="adv-filters" id="advFilters">
+        <div class="adv-filters-hd" onclick="toggleAdvFilters()" id="advHd">
+          <span class="af-title">⚙ Filtros avançados</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="adv-filters-body" id="advBody">
+          <div class="filter-grid">
+            <div class="fgroup"><label class="flabel">Número / Referência</label><input type="text" class="finput finput-sm" id="fNumero" oninput="debounceSearch()"></div>
+            <div class="fgroup"><label class="flabel">Ano</label><input type="text" class="finput finput-sm" id="fAno" placeholder="ex: 2024" oninput="debounceSearch()"></div>
+            <div class="fgroup"><label class="flabel">Responsável</label><input type="text" class="finput finput-sm" id="fResp" oninput="debounceSearch()"></div>
+            <div class="fgroup"><label class="flabel">Órgão / Setor</label><input type="text" class="finput finput-sm" id="fOrgao" oninput="debounceSearch()"></div>
+            <div class="fgroup"><label class="flabel">Situação</label>
+              <select class="finput finput-sm" id="fSit" onchange="runSearch()">
+                <option value="">Qualquer</option>
+                <option>Ativo</option><option>Encerrado</option><option>Pendente</option><option>Cancelado</option>
+                <option>Vigente</option><option>Rescindido</option><option>Em andamento</option><option>Homologada</option>
+              </select>
+            </div>
+            <div class="fgroup"><label class="flabel">Data — de / até</label>
+              <div class="frow" style="gap:6px;">
+                <input type="date" class="finput finput-sm" id="fDataDe" style="flex:1" onchange="runSearch()">
+                <input type="date" class="finput finput-sm" id="fDataAte" style="flex:1" onchange="runSearch()">
+              </div>
+            </div>
+            <div class="fgroup" style="grid-column:1/-1"><label class="flabel">Tags</label>
+              <input type="text" class="finput finput-sm" id="fTags" placeholder="ex: urgente, 2024, prefeitura" oninput="debounceSearch()">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+            <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Limpar filtros</button>
+            <button class="btn btn-primary btn-sm" onclick="runSearch()">Aplicar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-hd" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md) var(--r-md) 0 0;margin-bottom:0;">
+        <span class="panel-title">Documentos indexados</span>
+        <span class="badge b-teal" id="idxCount">—</span>
+      </div>
+      <div id="idxResults" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-md) var(--r-md);overflow:hidden;">
+        <div class="pdf-load" style="padding:48px"><div class="spin spin-lg"></div></div>
       </div>
     </div>
 
-    <!-- ─── USUÁRIOS ─── -->
-    <div id="sec-usuarios" class="section">
-      <div style="display:grid; grid-template-columns:340px 1fr; gap:16px; align-items:start;" id="usersGrid">
+    <!-- USUÁRIOS -->
+    <div id="sec-users" class="sec">
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start;" id="usersGrid">
         <div class="panel">
-          <div class="panel-header"><span class="panel-title">Novo usuário</span></div>
-          <div class="panel-body">
+          <div class="panel-hd"><span class="panel-title">Novo usuário</span></div>
+          <div class="panel-bd">
             <form id="userForm" onsubmit="createUser(event)">
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">Usuário</label>
-                <input type="text" name="usuario" class="input" required>
-              </div>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">Senha</label>
-                <input type="password" name="senha" class="input" required>
-              </div>
-              <div class="form-group" style="margin-bottom:16px;">
-                <label class="form-label">Perfil</label>
-                <select name="tipo" class="input">
-                  <option value="user">Usuário comum</option>
-                  <option value="admin">Administrador</option>
-                </select>
+              <div class="fgroup" style="margin-bottom:11px;"><label class="flabel">Usuário</label><input type="text" name="usuario" class="finput" required></div>
+              <div class="fgroup" style="margin-bottom:11px;"><label class="flabel">Senha</label><input type="password" name="senha" class="finput" required></div>
+              <div class="fgroup" style="margin-bottom:14px;"><label class="flabel">Perfil</label>
+                <select name="tipo" class="finput"><option value="user">Usuário comum</option><option value="admin">Administrador</option></select>
               </div>
               <button type="submit" class="btn btn-primary" style="width:100%;">Cadastrar</button>
             </form>
           </div>
         </div>
-
         <div class="panel">
-          <div class="panel-header"><span class="panel-title">Usuários</span></div>
+          <div class="panel-hd"><span class="panel-title">Usuários cadastrados</span></div>
           <div style="overflow-x:auto;">
-            <table class="data-table">
-              <thead>
-                <tr><th>Usuário</th><th>Perfil</th><th>Ações</th></tr>
-              </thead>
-              <tbody id="usersTableBody">
-                <tr><td colspan="3"><div class="pdf-loading" style="padding:24px"><div class="spinner"></div></div></td></tr>
-              </tbody>
-            </table>
+            <table class="tbl"><thead><tr><th>Usuário</th><th>Perfil</th><th>Ações</th></tr></thead>
+            <tbody id="usersTbody"><tr><td colspan="3"><div class="pdf-load" style="padding:24px"><div class="spin"></div></div></td></tr></tbody></table>
           </div>
         </div>
       </div>
     </div>
 
-  </div><!-- /content -->
-</div><!-- /main -->
+  </div>
+</div>
 
-<!-- ══════════════ MODAL PDF ══════════════ -->
-<div class="modal-overlay" id="pdfModal">
+<!-- MODAL PDF + PAINEL INDEXADOR -->
+<div class="modal-ov" id="pdfModal">
   <div class="modal-box">
-    <div class="modal-topbar">
-      <span class="modal-filename" id="modalFilename">—</span>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-ghost" id="modalDownloadBtn">⬇ Baixar</button>
-        <button class="modal-btn modal-btn-close" onclick="closeModal()">✕ Fechar</button>
+    <div class="modal-top">
+      <span class="modal-fn" id="modalFn">—</span>
+      <div class="modal-acts">
+        <button class="m-btn m-btn-idx" id="btnToggleIdx" onclick="toggleIdxPanel()">⊛ Indexar</button>
+        <button class="m-btn m-btn-ghost" id="btnDownload">⬇ Baixar</button>
+        <button class="m-btn m-btn-close" onclick="closeModal()">✕</button>
       </div>
     </div>
     <div class="modal-body">
       <div class="pdf-thumbs" id="pdfThumbs"></div>
-      <div class="pdf-viewer" id="pdfViewer">
-        <div class="pdf-loading"><div class="spinner spinner-lg"></div> Carregando PDF…</div>
+      <div class="pdf-viewer" id="pdfViewer"><div class="pdf-load"><div class="spin spin-lg"></div> Carregando…</div></div>
+      <div class="idx-panel" id="idxPanel">
+        <div class="idx-panel-inner">
+          <div class="idx-panel-hd">
+            <span class="idx-panel-title">⊛ Indexar documento</span>
+            <button class="m-btn m-btn-ghost" style="padding:3px 8px;font-size:11px" onclick="toggleIdxPanel()">✕</button>
+          </div>
+          <div class="idx-panel-body" id="idxPanelBody"><div class="pdf-load"><div class="spin"></div></div></div>
+          <div class="idx-panel-ft">
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="toggleIdxPanel()">Cancelar</button>
+            <button class="btn btn-teal btn-sm" style="flex:1" onclick="saveIndexador()">💾 Salvar</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════ CONTEXT MENU ══════════════ -->
-<div class="ctx-menu" id="ctxMenu">
-  <button class="ctx-item" onclick="ctxOpen()">👁 Visualizar</button>
-  <button class="ctx-item" onclick="ctxDownload()">⬇ Baixar</button>
-  <div class="ctx-sep"></div>
-  <button class="ctx-item danger" id="ctxDelete" onclick="ctxDeleteItem()">🗑 Excluir</button>
+<!-- MODAL INDEXADOR STANDALONE -->
+<div class="sidx-ov" id="sidxModal">
+  <div class="sidx-box">
+    <div class="sidx-hd">
+      <div>
+        <div class="sidx-title" id="sidxTitle">Indexar documento</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:2px;" id="sidxFn"></div>
+      </div>
+      <button class="icon-btn" onclick="closeSidxModal()">✕</button>
+    </div>
+    <div class="sidx-body" id="sidxBody"></div>
+    <div class="sidx-ft">
+      <button class="btn btn-ghost" onclick="closeSidxModal()">Cancelar</button>
+      <button class="btn btn-teal" onclick="saveSidxModal()">💾 Salvar indexador</button>
+    </div>
+  </div>
 </div>
 
-<!-- ══════════════ TOASTS ══════════════ -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- CONTEXT MENU -->
+<div class="ctx" id="ctxMenu">
+  <button class="ctx-i" onclick="ctxView()">👁 Visualizar</button>
+  <button class="ctx-i" onclick="ctxIndex()">⊛ Indexar</button>
+  <button class="ctx-i" onclick="ctxDownload()">⬇ Baixar</button>
+  <div class="ctx-sep"></div>
+  <button class="ctx-i danger" id="ctxDel" onclick="ctxDelete()">🗑 Excluir</button>
+</div>
 
-<!-- ══════════════ SCRIPTS ══════════════ -->
+<!-- TOASTS -->
+<div class="toast-wrap" id="toastWrap"></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-// ──────────── STATE ────────────
-const state = {
-  user:     null,
-  tipo:     null,
-  files:    {},       // { categoria: [{nome,usuario,data,caminho}] }
-  explorer: { tipo:"empenhos", caminho:"" },
-  ctx:      null,     // item selecionado no ctx menu
-  pdfTask:  null,     // pdfjsLib task atual (para cancelar)
-};
+const S={user:null,tipo:null,files:{},exp:{tipo:"empenhos",caminho:""},ctx:null,
+  pdf:{task:null,doc:null,tipo:"",caminho:"",nome:"",docId:null},
+  sidx:{docId:null,tipo:"",caminho:"",nome:""},idxPanelOpen:false,campos:[],tags:[],sidxTags:[]};
 
-// ──────────── TOAST ────────────
-function toast(type, title, msg="") {
-  const tc = document.getElementById("toastContainer");
-  const el = document.createElement("div");
-  el.className = `toast ${type}`;
-  el.innerHTML = `
-    <span class="toast-icon"></span>
-    <div class="toast-body">
-      <div class="toast-title">${title}</div>
-      ${msg ? `<div class="toast-msg">${msg}</div>` : ""}
-    </div>`;
+/* TOAST */
+function toast(type,title,msg=""){
+  const icons={success:"✓",error:"✕",info:"i",warn:"!"};
+  const colors={success:"#4ADE80",error:"#F87171",info:"#60A5FA",warn:"#FCD34D"};
+  const tc=document.getElementById("toastWrap");
+  const el=document.createElement("div"); el.className="toast";
+  el.innerHTML=`<span class="t-ico" style="color:${colors[type]||colors.info}">${icons[type]||"i"}</span>
+    <div class="t-body"><div class="t-title">${title}</div>${msg?`<div class="t-msg">${msg}</div>`:""}</div>`;
   tc.appendChild(el);
-  setTimeout(() => {
-    el.classList.add("hide");
-    setTimeout(() => el.remove(), 220);
-  }, 3200);
+  setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),200);},3200);
 }
 
-// ──────────── THEME ────────────
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute("data-theme") === "dark";
-  html.setAttribute("data-theme", isDark ? "light" : "dark");
-  document.getElementById("themeBtn").textContent = isDark ? "🌙" : "☀️";
-  localStorage.setItem("theme", isDark ? "light" : "dark");
-}
-(function(){
-  const saved = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", saved);
-  document.getElementById("themeBtn").textContent = saved==="dark"?"☀️":"🌙";
-})();
+/* THEME */
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute("data-theme")==="dark";h.setAttribute("data-theme",d?"light":"dark");document.getElementById("themeBtn").textContent=d?"🌙":"☀️";localStorage.setItem("dv-theme",d?"light":"dark");}
+(()=>{const t=localStorage.getItem("dv-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.getElementById("themeBtn").textContent=t==="dark"?"☀️":"🌙";})();
 
-// ──────────── SIDEBAR MOBILE ────────────
-function openSidebar() {
-  document.getElementById("sidebar").classList.add("open");
-  document.getElementById("sidebarOverlay").classList.add("open");
-}
-function closeSidebar() {
-  document.getElementById("sidebar").classList.remove("open");
-  document.getElementById("sidebarOverlay").classList.remove("open");
-}
+/* SIDEBAR */
+function openSidebar(){document.getElementById("sidebar").classList.add("open");document.getElementById("sidebarOv").classList.add("open");}
+function closeSidebar(){document.getElementById("sidebar").classList.remove("open");document.getElementById("sidebarOv").classList.remove("open");}
 
-// ──────────── SECTIONS ────────────
-const sectionTitles = {
-  "sec-dashboard":  "Dashboard",
-  "sec-documentos": "Documentos",
-  "sec-explorador": "Explorador",
-  "sec-usuarios":   "Usuários",
-};
-function showSection(id, navEl) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  if (navEl) navEl.classList.add("active");
-  document.getElementById("pageTitle").textContent = sectionTitles[id] || "";
+/* SECTIONS */
+const SEC_TITLES={"sec-dash":"Dashboard","sec-docs":"Documentos","sec-exp":"Explorador","sec-idx":"Indexadores","sec-users":"Usuários"};
+function showSec(id,navEl){
+  document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  document.getElementById(id).classList.add("on");
+  if(navEl)navEl.classList.add("active");
+  document.getElementById("pageTitle").textContent=SEC_TITLES[id]||"";
   closeSidebar();
-
-  if (id === "sec-dashboard")  loadDashboard();
-  if (id === "sec-documentos") renderDocTable();
-  if (id === "sec-explorador") loadExplorer(state.explorer.tipo, state.explorer.caminho);
-  if (id === "sec-usuarios")   loadUsers();
+  if(id==="sec-dash")loadDashboard();
+  if(id==="sec-docs")renderDocTable();
+  if(id==="sec-exp")loadExp(S.exp.tipo,S.exp.caminho);
+  if(id==="sec-idx")runSearch();
+  if(id==="sec-users")loadUsers();
 }
 
-// ──────────── INIT ────────────
-async function init() {
-  // usuário
-  const u = await fetch("/user").then(r=>r.json());
-  state.user = u.usuario;
-  state.tipo = u.tipo;
-
-  document.getElementById("userName").textContent = u.usuario || "—";
-  document.getElementById("userRole").textContent  = u.tipo === "admin" ? "Administrador" : "Usuário";
-  document.getElementById("userAvatar").textContent = (u.usuario||"?")[0].toUpperCase();
-
-  if (u.tipo === "admin") {
-    document.getElementById("nav-usuarios").style.display = "flex";
-    document.getElementById("ctxDelete").style.display    = "flex";
-  } else {
-    document.getElementById("ctxDelete").style.display = "none";
-  }
-
-  // arquivos
+/* INIT */
+async function init(){
+  const u=await fetch("/user").then(r=>r.json());
+  S.user=u.usuario;S.tipo=u.tipo;
+  document.getElementById("userName").textContent=u.usuario||"—";
+  document.getElementById("userRole").textContent=u.tipo==="admin"?"Administrador":"Usuário";
+  document.getElementById("userAv").textContent=(u.usuario||"?")[0].toUpperCase();
+  if(u.tipo==="admin"){document.getElementById("nav-users").style.display="flex";document.getElementById("ctxDel").style.display="flex";}
+  else document.getElementById("ctxDel").style.display="none";
   await loadFiles();
   loadDashboard();
-
-  // sucesso de criação de usuário
-  if (new URLSearchParams(location.search).get("sucesso") === "usuario_criado") {
-    toast("success", "Usuário criado!", "O novo usuário já pode fazer login.");
-    history.replaceState({}, "", "/");
-  }
+  updateIdxBadge();
+  if(new URLSearchParams(location.search).get("sucesso")==="usuario_criado"){toast("success","Usuário criado!");history.replaceState({},"","/");}
 }
 
-// ──────────── FILES ────────────
-async function loadFiles() {
-  try {
-    state.files = await fetch("/files").then(r=>r.json());
-  } catch(e) {
-    toast("error", "Erro ao carregar arquivos");
-  }
+/* FILES */
+async function loadFiles(){try{S.files=await fetch("/files").then(r=>r.json());}catch(e){toast("error","Erro ao carregar arquivos");}}
+
+function fileIcon(nome){
+  const ext=(nome||"").split(".").pop().toLowerCase();
+  if(ext==="pdf")return"📄";
+  if(["png","jpg","jpeg","gif"].includes(ext))return"🖼";
+  if(["docx","doc"].includes(ext))return"📝";
+  if(["xlsx","xls"].includes(ext))return"📊";
+  return"📎";
 }
 
-// ──────────── DASHBOARD ────────────
-async function loadDashboard() {
-  try {
-    const d = await fetch("/dashboard").then(r=>r.json());
+/* DASHBOARD */
+const COLORS=["#1D6EF5","#0D9488","#D97706","#6D28D9","#BE123C","#15803D"];
 
-    document.getElementById("statTotal").textContent    = d.total || 0;
-    document.getElementById("statCats").textContent     = Object.keys(d.categorias||{}).length;
-    document.getElementById("statRecentes").textContent = (d.recentes||[]).length;
-
-    renderDonut(d.categorias || {});
-    renderRecent(d.recentes  || []);
-  } catch(e) {
-    toast("error", "Erro ao carregar dashboard");
-  }
+async function loadDashboard(){
+  try{
+    const d=await fetch("/dashboard").then(r=>r.json());
+    document.getElementById("sTotal").textContent=d.total||0;
+    document.getElementById("sCats").textContent=Object.keys(d.categorias||{}).length;
+    document.getElementById("sRec").textContent=(d.recentes||[]).length;
+    renderDonut(d.categorias||{});renderRecent(d.recentes||[]);
+    fetch("/indexadores/lista/todos").then(r=>r.json()).then(d2=>{document.getElementById("sIdx").textContent=d2.total||0;}).catch(()=>{});
+  }catch(e){toast("error","Erro ao carregar dashboard");}
 }
 
-// Donut SVG simples
-const COLORS = ["#2563EB","#0EA5E9","#10B981","#F59E0B","#EF4444","#8B5CF6"];
-function renderDonut(cats) {
-  const area = document.getElementById("chartArea");
-  const keys = Object.keys(cats);
-  const vals = Object.values(cats);
-  const total = vals.reduce((a,b)=>a+b,0);
-
-  if (total === 0) {
-    area.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><p>Nenhum dado disponível</p></div>`;
-    return;
-  }
-
-  const R=60, cx=70, cy=70, size=140;
-  let svgArcs = "";
-  let offset  = -90;
-  keys.forEach((k,i) => {
-    const pct = vals[i] / total;
-    const angle = pct * 360;
-    const r1 = offset * Math.PI/180;
-    const r2 = (offset+angle) * Math.PI/180;
-    const x1 = cx + R*Math.cos(r1), y1 = cy + R*Math.sin(r1);
-    const x2 = cx + R*Math.cos(r2), y2 = cy + R*Math.sin(r2);
-    const large = angle > 180 ? 1 : 0;
-    svgArcs += `<path d="M${cx},${cy} L${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} Z"
-                     fill="${COLORS[i%COLORS.length]}" opacity=".9"/>`;
-    offset += angle;
+function renderDonut(cats){
+  const area=document.getElementById("chartArea");
+  const keys=Object.keys(cats),vals=Object.values(cats),total=vals.reduce((a,b)=>a+b,0);
+  if(!total){area.innerHTML=`<div class="empty"><p>Nenhum dado</p></div>`;return;}
+  const R=56,cx=66,cy=66,sz=132;let off=-90,arcs="";
+  keys.forEach((k,i)=>{
+    const a=vals[i]/total*360,r1=off*Math.PI/180,r2=(off+a)*Math.PI/180;
+    const x1=cx+R*Math.cos(r1),y1=cy+R*Math.sin(r1),x2=cx+R*Math.cos(r2),y2=cy+R*Math.sin(r2);
+    arcs+=`<path d="M${cx},${cy} L${x1},${y1} A${R},${R},0,${a>180?1:0},1,${x2},${y2} Z" fill="${COLORS[i%COLORS.length]}" opacity=".9"/>`;off+=a;
   });
-  // hole
-  svgArcs += `<circle cx="${cx}" cy="${cy}" r="30" fill="var(--surface)"/>`;
-
-  let legend = keys.map((k,i)=>`
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>
-      <span>${k}</span>
-      <strong style="margin-left:auto;padding-left:8px;">${vals[i]}</strong>
-    </div>`).join("");
-
-  area.innerHTML = `
-    <div class="chart-wrap">
-      <svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svgArcs}</svg>
-      <div class="chart-legend">${legend}</div>
-    </div>`;
+  arcs+=`<circle cx="${cx}" cy="${cy}" r="27" fill="var(--surface)"/>`;
+  const legend=keys.map((k,i)=>`<div class="leg-item"><div class="leg-dot" style="background:${COLORS[i%COLORS.length]}"></div><span>${k}</span><strong style="margin-left:auto;padding-left:8px">${vals[i]}</strong></div>`).join("");
+  area.innerHTML=`<div class="chart-wrap"><svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${arcs}</svg><div class="chart-legend">${legend}</div></div>`;
 }
 
-function renderRecent(recentes) {
-  const list = document.getElementById("recentList");
-  if (!recentes.length) {
-    list.innerHTML = `<div class="empty-state" style="padding:24px"><p>Nenhum arquivo ainda</p></div>`;
-    return;
-  }
-  list.innerHTML = recentes.map(r => {
-    const ext  = r.nome.split(".").pop().toLowerCase();
-    const icon = ext==="pdf"?"📄":["png","jpg","jpeg"].includes(ext)?"🖼":"📎";
-    const date = r.data ? new Date(r.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}) : "—";
-    return `
-      <div class="recent-item" onclick="openFile('${r.categoria}','${r.caminho||""}','${r.nome}')">
-        <div class="recent-thumb">${icon}</div>
-        <div class="recent-info">
-          <div class="recent-name">${r.nome}</div>
-          <div class="recent-meta">${r.categoria} · ${r.usuario||"—"}</div>
-        </div>
-        <span class="recent-time">${date}</span>
-      </div>`;
+function renderRecent(recentes){
+  const el=document.getElementById("recentList");
+  if(!recentes.length){el.innerHTML=`<div class="empty" style="padding:24px"><p>Nenhum arquivo ainda</p></div>`;return;}
+  el.innerHTML=recentes.map(r=>{
+    const d=r.data?new Date(r.data).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}):"—";
+    return`<div class="recent-item" onclick="openFile('${r.categoria}','${r.caminho||""}','${r.nome}',null)">
+      <div class="rec-thumb">${fileIcon(r.nome)}</div>
+      <div class="rec-info"><div class="rec-name">${r.nome}</div><div class="rec-meta">${r.categoria} · ${r.usuario||"—"}</div></div>
+      <span class="rec-time">${d}</span></div>`;
   }).join("");
 }
 
-// ──────────── DOC TABLE ────────────
-function renderDocTable() {
-  const tbody  = document.getElementById("docTableBody");
-  const search = (document.getElementById("searchInput")?.value||"").toLowerCase();
-  const cat    = document.getElementById("catFilter")?.value||"";
-  let count = 0;
-
-  let html = "";
-  for (const categoria in state.files) {
-    if (cat && cat !== categoria) continue;
-
-    const docs = state.files[categoria].filter(f =>
-      !f.nome.startsWith(".") &&
-      (!search || f.nome.toLowerCase().includes(search) || categoria.toLowerCase().includes(search))
-    );
-    if (!docs.length) continue;
-
-    html += `<tr class="category-row"><td colspan="5">📁 ${categoria}</td></tr>`;
-    docs.forEach(f => {
+/* DOC TABLE */
+function renderDocTable(){
+  const tbody=document.getElementById("docTbody");
+  const q=(document.getElementById("docSearch")?.value||"").toLowerCase();
+  const cat=document.getElementById("docCatFilter")?.value||"";
+  let count=0,html="";
+  for(const categoria in S.files){
+    if(cat&&cat!==categoria)continue;
+    const docs=S.files[categoria].filter(f=>!f.nome.startsWith(".")&&(!q||f.nome.toLowerCase().includes(q)||categoria.toLowerCase().includes(q)));
+    if(!docs.length)continue;
+    html+=`<tr class="cat-row"><td colspan="6">📁 ${categoria}</td></tr>`;
+    docs.forEach(f=>{
       count++;
-      const ext  = f.nome.split(".").pop().toLowerCase();
-      const icon = ext==="pdf"?"📄":["png","jpg","jpeg"].includes(ext)?"🖼":"📎";
-      const date = f.data ? new Date(f.data).toLocaleDateString("pt-BR") : "—";
-      const adminBtns = state.tipo==="admin"
-        ? `<button class="btn btn-danger-ghost btn-sm" onclick="deleteFile('${categoria}','${f.caminho||""}','${f.nome}',this)">🗑</button>`
-        : "";
-      html += `
-        <tr>
-          <td>${icon} ${f.nome}</td>
-          <td><span class="badge badge-blue">${categoria}</span></td>
-          <td style="color:var(--text-2)">${f.usuario||"—"}</td>
-          <td style="color:var(--text-2);font-size:12.5px;">${date}</td>
-          <td>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-ghost btn-sm" onclick="openFile('${categoria}','${f.caminho||""}','${f.nome}')">👁</button>
-              <button class="btn btn-ghost btn-sm" onclick="downloadFile('${categoria}','${f.caminho||""}','${f.nome}')">⬇</button>
-              ${adminBtns}
-            </div>
-          </td>
-        </tr>`;
+      const d=f.data?new Date(f.data).toLocaleDateString("pt-BR"):"—";
+      const indexed=f.id?"<span class='badge b-teal' style='font-size:10px'>✓ Sim</span>":"<span class='badge b-slate' style='font-size:10px'>— Não</span>";
+      const delBtn=S.tipo==="admin"?`<button class="btn btn-rose btn-sm" onclick="deleteFile('${categoria}','${f.caminho||""}','${f.nome}',this)">🗑</button>`:"";
+      html+=`<tr>
+        <td>${fileIcon(f.nome)} ${f.nome}</td>
+        <td><span class="badge b-blue">${categoria}</span></td>
+        <td>${indexed}</td>
+        <td style="color:var(--text-2)">${f.usuario||"—"}</td>
+        <td style="color:var(--text-2);font-size:12px">${d}</td>
+        <td><div style="display:flex;gap:5px;">
+          <button class="btn btn-ghost btn-sm" onclick="openFile('${categoria}','${f.caminho||""}','${f.nome}',${f.id||null})">👁</button>
+          <button class="btn btn-amber btn-sm" onclick="openSidxModal(${f.id||null},'${categoria}','${f.caminho||""}','${f.nome}')">⊛</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadFile('${categoria}','${f.caminho||""}','${f.nome}')">⬇</button>
+          ${delBtn}
+        </div></td></tr>`;
     });
   }
-
-  tbody.innerHTML = html || `<tr><td colspan="5"><div class="empty-state" style="padding:40px">
-    <div class="empty-state-icon">📂</div>
-    <h4>Nenhum documento encontrado</h4>
-    <p>Tente ajustar o filtro ou faça um upload.</p>
-  </div></td></tr>`;
-
-  document.getElementById("docCount").textContent = `${count} arquivo${count!==1?"s":""}`;
+  tbody.innerHTML=html||`<tr><td colspan="6"><div class="empty" style="padding:40px"><div class="empty-ico">📂</div><h4>Nenhum documento</h4></div></td></tr>`;
+  document.getElementById("docCount").textContent=`${count} arquivo${count!==1?"s":""}`;
 }
 
-function filterTable() { renderDocTable(); }
-
-// ──────────── OPEN FILE (PDF modal) ────────────
-async function openFile(tipo, caminho, nome) {
-  const modal = document.getElementById("pdfModal");
+/* OPEN FILE */
+async function openFile(tipo,caminho,nome,docId){
+  S.pdf={task:null,doc:null,tipo,caminho,nome,docId};
+  const modal=document.getElementById("pdfModal");
   modal.classList.add("open");
-  document.getElementById("modalFilename").textContent = nome;
-  document.getElementById("pdfThumbs").innerHTML  = "";
-  document.getElementById("pdfViewer").innerHTML  = `<div class="pdf-loading"><div class="spinner spinner-lg"></div> Carregando…</div>`;
-
-  // busca URL segura no backend
+  document.getElementById("modalFn").textContent=nome;
+  document.getElementById("pdfThumbs").innerHTML="";
+  document.getElementById("pdfViewer").innerHTML=`<div class="pdf-load"><div class="spin spin-lg"></div> Carregando…</div>`;
+  document.getElementById("idxPanel").classList.remove("open");
+  document.getElementById("btnToggleIdx").classList.remove("active");
+  S.idxPanelOpen=false;
   let url;
-  try {
-    const params = new URLSearchParams({tipo, caminho, nome});
-    const res = await fetch(`/signed-url?${params}`);
-    const data = await res.json();
-    if (data.erro) throw new Error(data.erro);
-    url = data.url;
-  } catch(e) {
-    document.getElementById("pdfViewer").innerHTML =
-      `<div class="pdf-loading" style="color:#F87171;">Erro ao abrir arquivo: ${e.message}</div>`;
-    return;
-  }
-
-  document.getElementById("modalDownloadBtn").onclick = () => {
-    const a = document.createElement("a");
-    a.href = url; a.download = nome;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  };
-
-  const ext = nome.split(".").pop().toLowerCase();
-  if (!["pdf"].includes(ext)) {
-    document.getElementById("pdfViewer").innerHTML =
-      `<div style="display:flex;align-items:center;justify-content:center;height:100%;">
-        <img src="${url}" style="max-width:100%;max-height:100%;border-radius:8px;object-fit:contain;">
-       </div>`;
-    return;
-  }
-
-  // cancela task anterior
-  if (state.pdfTask) { state.pdfTask.destroy(); state.pdfTask = null; }
-
-  try {
-    state.pdfTask = pdfjsLib.getDocument(url);
-    const pdf = await state.pdfTask.promise;
-
-    // miniaturas
-    const thumbsEl = document.getElementById("pdfThumbs");
-    for (let p=1; p<=pdf.numPages; p++) {
-      const page    = await pdf.getPage(p);
-      const vp      = page.getViewport({scale:.18});
-      const canvas  = document.createElement("canvas");
-      canvas.width  = vp.width;
-      canvas.height = vp.height;
-      await page.render({canvasContext:canvas.getContext("2d"), viewport:vp}).promise;
-      const thumb = document.createElement("div");
-      thumb.className = "pdf-thumb" + (p===1?" active":"");
-      thumb.appendChild(canvas);
-      thumb.onclick = () => {
-        document.querySelectorAll(".pdf-thumb").forEach(t=>t.classList.remove("active"));
-        thumb.classList.add("active");
-        renderPdfPage(pdf, p);
-      };
-      thumbsEl.appendChild(thumb);
+  try{
+    const p=new URLSearchParams({tipo,caminho,nome});
+    const res=await fetch(`/signed-url?${p}`);
+    const data=await res.json();
+    if(data.erro)throw new Error(data.erro);
+    url=data.url;
+  }catch(e){document.getElementById("pdfViewer").innerHTML=`<div class="pdf-load" style="color:#F87171">Erro: ${e.message}</div>`;return;}
+  document.getElementById("btnDownload").onclick=()=>triggerDownload(url,nome);
+  const ext=nome.split(".").pop().toLowerCase();
+  if(ext!=="pdf"){document.getElementById("pdfViewer").innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%"><img src="${url}" style="max-width:100%;max-height:100%;border-radius:8px;object-fit:contain"></div>`;return;}
+  if(S.pdf.task)S.pdf.task.destroy();
+  S.pdf.task=pdfjsLib.getDocument(url);
+  try{
+    const pdf=await S.pdf.task.promise;S.pdf.doc=pdf;
+    const thumbs=document.getElementById("pdfThumbs");
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      const vp=page.getViewport({scale:.16});
+      const cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;
+      await page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+      const td=document.createElement("div");td.className="pdf-thumb"+(p===1?" act":"");td.appendChild(cv);
+      td.onclick=()=>{document.querySelectorAll(".pdf-thumb").forEach(t=>t.classList.remove("act"));td.classList.add("act");renderPdfPage(pdf,p);};
+      thumbs.appendChild(td);
     }
-
-    renderPdfPage(pdf, 1);
-
-  } catch(e) {
-    document.getElementById("pdfViewer").innerHTML =
-      `<div class="pdf-loading" style="color:#F87171;">Erro ao renderizar PDF.</div>`;
-  }
+    renderPdfPage(pdf,1);
+  }catch(e){document.getElementById("pdfViewer").innerHTML=`<div class="pdf-load" style="color:#F87171">Erro ao renderizar PDF.</div>`;}
 }
 
-async function renderPdfPage(pdf, num) {
-  const viewer = document.getElementById("pdfViewer");
-  const page   = await pdf.getPage(num);
-  const vw     = viewer.clientWidth - 40;
-  const vp0    = page.getViewport({scale:1});
-  const scale  = Math.min(vw / vp0.width, 1.8);
-  const vp     = page.getViewport({scale});
-  const canvas = document.createElement("canvas");
-  canvas.width  = vp.width;
-  canvas.height = vp.height;
-  viewer.innerHTML = "";
-  viewer.appendChild(canvas);
-  await page.render({canvasContext:canvas.getContext("2d"), viewport:vp}).promise;
+async function renderPdfPage(pdf,num){
+  const viewer=document.getElementById("pdfViewer");
+  const page=await pdf.getPage(num);
+  const vw=viewer.clientWidth-36;
+  const vp0=page.getViewport({scale:1});
+  const scale=Math.min(vw/vp0.width,1.9);
+  const vp=page.getViewport({scale});
+  const cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;
+  viewer.innerHTML="";viewer.appendChild(cv);
+  await page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
 }
 
-function closeModal() {
+function closeModal(){
   document.getElementById("pdfModal").classList.remove("open");
-  document.getElementById("pdfViewer").innerHTML = "";
-  document.getElementById("pdfThumbs").innerHTML = "";
-  if (state.pdfTask) { state.pdfTask.destroy(); state.pdfTask = null; }
+  document.getElementById("pdfViewer").innerHTML="";document.getElementById("pdfThumbs").innerHTML="";
+  if(S.pdf.task){S.pdf.task.destroy();S.pdf.task=null;}
+  document.getElementById("idxPanel").classList.remove("open");S.idxPanelOpen=false;
+}
+document.getElementById("pdfModal").addEventListener("click",e=>{if(e.target===document.getElementById("pdfModal"))closeModal();});
+
+/* PAINEL INDEXADOR */
+async function toggleIdxPanel(){
+  S.idxPanelOpen=!S.idxPanelOpen;
+  document.getElementById("idxPanel").classList.toggle("open",S.idxPanelOpen);
+  document.getElementById("btnToggleIdx").classList.toggle("active",S.idxPanelOpen);
+  if(S.idxPanelOpen)await loadIdxPanel();
 }
 
-// fechar modal clicando fora
-document.getElementById("pdfModal").addEventListener("click", function(e) {
-  if (e.target === this) closeModal();
-});
-
-// ──────────── DOWNLOAD ────────────
-async function downloadFile(tipo, caminho, nome) {
-  const params = new URLSearchParams({tipo, caminho, nome});
-  const res = await fetch(`/signed-url?${params}`);
-  const data = await res.json();
-  if (data.erro) { toast("error","Erro ao baixar","Não foi possível gerar o link."); return; }
-  const a = document.createElement("a");
-  a.href = data.url; a.download = nome;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+async function loadIdxPanel(){
+  const body=document.getElementById("idxPanelBody");
+  body.innerHTML=`<div class="pdf-load"><div class="spin"></div></div>`;
+  const campos=await fetchCampos(S.pdf.tipo);S.campos=campos;
+  let existing=null;
+  if(S.pdf.docId){try{const r=await fetch(`/indexadores/${S.pdf.docId}`).then(r=>r.json());existing=r.indexador;}catch(e){}}
+  S.tags=existing?.tags||[];
+  body.innerHTML=buildIdxForm(campos,existing,"panel");
+  initTagWidget("panelTagWrap","panelTagInput",S.tags,"panel");
 }
 
-// ──────────── DELETE ────────────
-async function deleteFile(tipo, caminho, nome, btn) {
-  if (!confirm(`Excluir "${nome}"?`)) return;
-  if (btn) btn.disabled = true;
-  try {
-    const params = new URLSearchParams({tipo, caminho, nome});
-    const res  = await fetch(`/delete?${params}`, {method:"DELETE"});
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.erro || "Erro desconhecido");
-    toast("success", "Arquivo excluído", nome);
-    await loadFiles();
-    renderDocTable();
-    loadDashboard();
-  } catch(e) {
-    toast("error","Erro ao excluir", e.message);
-    if (btn) btn.disabled = false;
+async function saveIndexador(){
+  if(!S.pdf.docId){toast("warn","Este arquivo não tem ID no banco.");return;}
+  const data=collectIdxForm("panel",S.campos,S.tags);
+  try{
+    const res=await fetch(`/indexadores/${S.pdf.docId}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    const json=await res.json();
+    if(json.ok){toast("success","Indexador salvo!");updateIdxBadge();}
+    else toast("error","Erro ao salvar",json.erro||"");
+  }catch(e){toast("error","Erro de conexão");}
+}
+
+/* MODAL INDEXADOR STANDALONE */
+async function openSidxModal(docId,tipo,caminho,nome){
+  S.sidx={docId,tipo,caminho,nome};
+  document.getElementById("sidxTitle").textContent=docId?"Editar indexador":"Indexar documento";
+  document.getElementById("sidxFn").textContent=nome;
+  document.getElementById("sidxBody").innerHTML=`<div class="pdf-load"><div class="spin"></div></div>`;
+  document.getElementById("sidxModal").classList.add("open");
+  const campos=await fetchCampos(tipo);S.campos=campos;
+  let existing=null;
+  if(docId){try{existing=(await fetch(`/indexadores/${docId}`).then(r=>r.json())).indexador;}catch(e){}}
+  S.sidxTags=existing?.tags||[];
+  document.getElementById("sidxBody").innerHTML=buildIdxForm(campos,existing,"sidx");
+  initTagWidget("sidxTagWrap","sidxTagInput",S.sidxTags,"sidx");
+}
+function closeSidxModal(){document.getElementById("sidxModal").classList.remove("open");}
+document.getElementById("sidxModal").addEventListener("click",e=>{if(e.target===document.getElementById("sidxModal"))closeSidxModal();});
+
+async function saveSidxModal(){
+  if(!S.sidx.docId){toast("warn","Arquivo sem ID — faça upload pelo explorador primeiro.");return;}
+  const data=collectIdxForm("sidx",S.campos,S.sidxTags);
+  try{
+    const res=await fetch(`/indexadores/${S.sidx.docId}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    const json=await res.json();
+    if(json.ok){
+      toast("success","Indexador salvo!");
+      closeSidxModal();updateIdxBadge();
+      await loadFiles();renderDocTable();runSearch();
+    }else toast("error","Erro ao salvar",json.erro||"");
+  }catch(e){toast("error","Erro de conexão");}
+}
+
+/* FORM BUILDER */
+async function fetchCampos(categoria){
+  try{const r=await fetch(`/indexadores/campos?categoria=${categoria}`).then(r=>r.json());return r.campos||[];}
+  catch(e){return[];}
+}
+
+function buildIdxForm(campos,existing,prefix){
+  const extras=existing?.extras||{};
+  const camposFixos=campos.filter(c=>!c.extra);
+  const camposExtras=campos.filter(c=>c.extra);
+  let html=`<div class="idx-section-label">Campos gerais</div>`;
+  camposFixos.forEach(c=>html+=buildField(c,existing?.[c.key]||"",prefix));
+  if(camposExtras.length){html+=`<div class="idx-section-label" style="margin-top:6px">Campos específicos</div>`;camposExtras.forEach(c=>html+=buildField(c,extras[c.key]||"",prefix));}
+  html+=`<div class="idx-section-label" style="margin-top:6px">Tags livres</div>
+    <div class="fgroup"><div style="position:relative">
+      <div class="tag-wrap" id="${prefix}TagWrap"><input class="tag-input" id="${prefix}TagInput" placeholder="Digite e pressione Enter…"></div>
+      <div class="tag-suggestions" id="${prefix}TagSug"></div>
+    </div></div>`;
+  return html;
+}
+
+function buildField(c,val,prefix){
+  const id=`${prefix}_${c.key}`;
+  if(c.type==="select"){
+    const opts=(c.options||[]).map(o=>`<option${o===val?" selected":""}>${o}</option>`).join("");
+    return`<div class="fgroup"><label class="flabel">${c.label}</label><select class="finput finput-sm" id="${id}"><option value="">— selecione —</option>${opts}</select></div>`;
   }
+  if(c.type==="textarea")return`<div class="fgroup"><label class="flabel">${c.label}</label><textarea class="finput finput-sm" id="${id}" rows="2">${val}</textarea></div>`;
+  return`<div class="fgroup"><label class="flabel">${c.label}</label><input type="${c.type||"text"}" class="finput finput-sm" id="${id}" value="${val}"></div>`;
 }
 
-// ──────────── EXPLORADOR ────────────
-async function loadExplorer(tipo, caminho) {
-  state.explorer.tipo    = tipo;
-  state.explorer.caminho = caminho || "";
-  document.getElementById("explorerTipo").value = tipo;
-
-  updateBreadcrumb();
-
-  const grid = document.getElementById("fileGrid");
-  grid.innerHTML = `<div style="grid-column:1/-1"><div class="pdf-loading" style="padding:48px"><div class="spinner spinner-lg"></div></div></div>`;
-
-  try {
-    const params = new URLSearchParams({tipo, caminho: caminho||""});
-    const data   = await fetch(`/explorar?${params}`).then(r=>r.json());
-    renderExplorer(data);
-  } catch(e) {
-    toast("error","Erro ao carregar pasta");
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p>Erro ao carregar. Tente novamente.</p></div>`;
-  }
+function collectIdxForm(prefix,campos,tags){
+  const data={};
+  campos.forEach(c=>{const el=document.getElementById(`${prefix}_${c.key}`);if(el)data[c.key]=el.value||"";});
+  data.tags=tags;return data;
 }
 
-function renderExplorer({pastas, arquivos}) {
-  const grid = document.getElementById("fileGrid");
-  let html = "";
-
-  pastas.forEach(p => {
-    const novoCaminho = state.explorer.caminho ? state.explorer.caminho+"/"+p : p;
-    html += `
-      <div class="file-item"
-           onclick="loadExplorer('${state.explorer.tipo}','${novoCaminho}')"
-           oncontextmenu="showCtx(event,'folder','${p}')">
-        <span class="file-item-icon">📁</span>
-        <div class="file-item-name">${p}</div>
-      </div>`;
+/* TAG WIDGET */
+function initTagWidget(wrapId,inputId,tagsArr,prefix){
+  const wrap=document.getElementById(wrapId);const input=document.getElementById(inputId);const sug=document.getElementById(`${prefix}TagSug`);
+  if(!wrap||!input)return;
+  renderChips(wrap,input,tagsArr);
+  input.addEventListener("keydown",e=>{
+    if((e.key==="Enter"||e.key===",")&&input.value.trim()){e.preventDefault();addTag(tagsArr,input.value.trim(),wrap,input);sug.classList.remove("open");}
+    else if(e.key==="Backspace"&&!input.value&&tagsArr.length){tagsArr.pop();renderChips(wrap,input,tagsArr);}
   });
-
-  arquivos.filter(a=>!a.startsWith(".")).forEach(a => {
-    const ext = a.split(".").pop().toLowerCase();
-    const icon = ext==="pdf"?"📄":["png","jpg","jpeg"].includes(ext)?"🖼":"📎";
-    html += `
-      <div class="file-item"
-           onclick="openFile('${state.explorer.tipo}','${state.explorer.caminho}','${a}')"
-           oncontextmenu="showCtx(event,'file','${a}')">
-        <span class="file-item-icon">${icon}</span>
-        <div class="file-item-name">${a}</div>
-      </div>`;
+  input.addEventListener("input",async()=>{
+    const q=input.value.trim();if(q.length<1){sug.classList.remove("open");return;}
+    try{
+      const tags=await fetch(`/indexadores/tags?q=${encodeURIComponent(q)}`).then(r=>r.json());
+      sug.innerHTML=tags.filter(t=>!tagsArr.includes(t)).map(t=>`<div class="tag-sug-item" onclick="addTag(${prefix==="panel"?"S.tags":"S.sidxTags"},'${t}',document.getElementById('${wrapId}'),document.getElementById('${inputId}'))">${t}</div>`).join("");
+      sug.classList.toggle("open",tags.length>0);
+    }catch(e){}
   });
+  document.addEventListener("click",e=>{if(!wrap.contains(e.target))sug.classList.remove("open");});
+  wrap.onclick=()=>input.focus();
+}
 
-  grid.innerHTML = html || `
-    <div style="grid-column:1/-1">
-      <div class="empty-state">
-        <div class="empty-state-icon">📂</div>
-        <h4>Pasta vazia</h4>
-        <p>Arraste arquivos ou clique para fazer upload.</p>
+function addTag(arr,nome,wrap,input){
+  nome=nome.replace(",","").trim().toLowerCase().slice(0,60);
+  if(!nome||arr.includes(nome)){if(input)input.value="";return;}
+  arr.push(nome);if(input)input.value="";renderChips(wrap,input,arr);
+}
+
+function renderChips(wrap,input,arr){
+  wrap.querySelectorAll(".tag-chip").forEach(c=>c.remove());
+  arr.forEach((t,i)=>{
+    const chip=document.createElement("span");chip.className="tag-chip";
+    chip.innerHTML=`${t}<button class="tag-chip-rm" title="Remover">×</button>`;
+    chip.querySelector("button").addEventListener("click",e=>{e.stopPropagation();arr.splice(i,1);renderChips(wrap,input,arr);});
+    wrap.insertBefore(chip,input);
+  });
+}
+
+/* BUSCA AVANÇADA */
+let _st=null;
+function debounceSearch(){clearTimeout(_st);_st=setTimeout(runSearch,420);}
+
+async function runSearch(){
+  const res=document.getElementById("idxResults");
+  res.innerHTML=`<div class="pdf-load" style="padding:48px"><div class="spin spin-lg"></div></div>`;
+  const params=new URLSearchParams({
+    q:document.getElementById("idxQ")?.value||"",
+    categoria:document.getElementById("idxCat")?.value||"",
+    numero:document.getElementById("fNumero")?.value||"",
+    ano:document.getElementById("fAno")?.value||"",
+    responsavel:document.getElementById("fResp")?.value||"",
+    orgao:document.getElementById("fOrgao")?.value||"",
+    situacao:document.getElementById("fSit")?.value||"",
+    data_de:document.getElementById("fDataDe")?.value||"",
+    data_ate:document.getElementById("fDataAte")?.value||"",
+    tags:document.getElementById("fTags")?.value||"",
+  });
+  try{
+    const data=await fetch(`/indexadores/busca/avancada?${params}`).then(r=>r.json());
+    document.getElementById("idxCount").textContent=`${data.total} resultado${data.total!==1?"s":""}`;
+    renderIdxResults(data.resultados||[]);
+  }catch(e){res.innerHTML=`<div class="empty"><p>Erro ao buscar. Tente novamente.</p></div>`;}
+}
+
+function renderIdxResults(items){
+  const res=document.getElementById("idxResults");
+  if(!items.length){res.innerHTML=`<div class="empty" style="padding:48px"><div class="empty-ico">🔍</div><h4>Nenhum resultado</h4><p>Ajuste os filtros ou indexe mais documentos.</p></div>`;return;}
+  res.innerHTML=items.map(item=>{
+    const idx=item.indexador;
+    const d=item.data?new Date(item.data).toLocaleDateString("pt-BR"):"—";
+    let fields="";
+    if(idx){
+      const pairs=[
+        idx.numero&&["Nº",idx.numero],idx.ano&&["Ano",idx.ano],idx.data_doc&&["Data",idx.data_doc],
+        idx.responsavel&&["Resp.",idx.responsavel],idx.orgao&&["Órgão",idx.orgao],
+        idx.valor&&["Valor",idx.valor],idx.situacao&&["Situação",idx.situacao],
+      ].filter(Boolean);
+      fields=`<div class="idx-fields">${pairs.map(([k,v])=>`<span class="badge b-slate"><strong>${k}:</strong>&nbsp;${v}</span>`).join("")}</div>`;
+      if(idx.tags?.length)fields+=`<div class="idx-tag-row">${idx.tags.map(t=>`<span class="badge b-teal" style="cursor:pointer" onclick="filterByTag('${t}')">⊛ ${t}</span>`).join("")}</div>`;
+      if(idx.assunto)fields+=`<div style="margin-top:6px;font-size:12px;color:var(--text-2);line-height:1.5">${idx.assunto}</div>`;
+    }
+    return`<div class="idx-result-card" onclick="openFile('${item.categoria}','${item.caminho}','${item.nome}',${item.id})">
+      <div class="idx-file-ico">${fileIcon(item.nome)}</div>
+      <div class="idx-info">
+        <div class="idx-filename">${item.nome}</div>
+        <div class="idx-meta"><span class="badge b-blue">${item.categoria}</span> · ${d} · ${item.usuario||"—"}</div>
+        ${fields||`<div style="margin-top:6px"><span class="badge b-slate">Não indexado</span></div>`}
       </div>
-    </div>`;
+      <div class="idx-actions">
+        <button class="btn btn-amber btn-sm" onclick="event.stopPropagation();openSidxModal(${item.id},'${item.categoria}','${item.caminho}','${item.nome}')">⊛ Editar</button>
+      </div></div>`;
+  }).join("");
 }
 
-function updateBreadcrumb() {
-  const el  = document.getElementById("breadcrumb");
-  const tipo = state.explorer.tipo;
-  const cam  = state.explorer.caminho;
-  let html   = `<span class="breadcrumb-item" onclick="loadExplorer('${tipo}','')">Raiz</span>`;
-  html += `<span class="breadcrumb-sep">›</span>`;
-  html += `<span class="breadcrumb-item" onclick="loadExplorer('${tipo}','')">${tipo}</span>`;
-
-  if (cam) {
-    const parts = cam.split("/");
-    parts.forEach((p,i) => {
-      const sub = parts.slice(0,i+1).join("/");
-      html += `<span class="breadcrumb-sep">›</span>`;
-      html += `<span class="breadcrumb-item" onclick="loadExplorer('${tipo}','${sub}')">${p}</span>`;
-    });
-  }
-  el.innerHTML = html;
+function filterByTag(tag){
+  document.getElementById("fTags").value=tag;
+  const hd=document.getElementById("advHd"),body=document.getElementById("advBody");
+  if(!hd.classList.contains("open")){hd.classList.add("open");body.classList.add("open");}
+  runSearch();
 }
 
-function goBack() {
-  const parts = state.explorer.caminho.split("/").filter(Boolean);
-  parts.pop();
-  loadExplorer(state.explorer.tipo, parts.join("/"));
+function toggleAdvFilters(){document.getElementById("advHd").classList.toggle("open");document.getElementById("advBody").classList.toggle("open");}
+function clearFilters(){
+  ["fNumero","fAno","fResp","fOrgao","fTags","fDataDe","fDataAte"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  const sit=document.getElementById("fSit");if(sit)sit.value="";runSearch();
 }
 
-// ──────────── DRAG & DROP ────────────
-function onDragOver(e) {
-  e.preventDefault();
-  document.getElementById("dropZone").classList.add("dragover");
-}
-function onDragLeave() {
-  document.getElementById("dropZone").classList.remove("dragover");
-}
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById("dropZone").classList.remove("dragover");
-  handleFileSelect(e.dataTransfer.files);
-}
-function handleFileSelect(files) {
-  if (!files.length) return;
-  uploadFiles(Array.from(files));
+async function updateIdxBadge(){
+  try{const d=await fetch("/indexadores/lista/todos").then(r=>r.json());document.getElementById("idxBadge").textContent=d.total||0;}catch(e){}
 }
 
-async function uploadFiles(files) {
-  const listEl = document.getElementById("uploadList");
+/* DOWNLOAD / DELETE */
+async function downloadFile(tipo,caminho,nome){
+  try{const p=new URLSearchParams({tipo,caminho,nome});const r=await fetch(`/signed-url?${p}`).then(r=>r.json());if(r.erro)throw new Error(r.erro);triggerDownload(r.url,nome);}
+  catch(e){toast("error","Erro ao baixar",e.message);}
+}
+function triggerDownload(url,nome){const a=document.createElement("a");a.href=url;a.download=nome;document.body.appendChild(a);a.click();document.body.removeChild(a);}
+async function deleteFile(tipo,caminho,nome,btn){
+  if(!confirm(`Excluir "${nome}"?`))return;if(btn)btn.disabled=true;
+  try{
+    const p=new URLSearchParams({tipo,caminho,nome});
+    const d=await fetch(`/delete?${p}`,{method:"DELETE"}).then(r=>r.json());
+    if(!d.ok)throw new Error(d.erro||"Erro desconhecido");
+    toast("success","Arquivo excluído",nome);await loadFiles();renderDocTable();loadDashboard();
+  }catch(e){toast("error","Erro ao excluir",e.message);if(btn)btn.disabled=false;}
+}
 
-  const entries = files.map(f => {
-    const el = document.createElement("div");
-    el.className = "upload-entry";
-    el.innerHTML = `
-      <span class="upload-status">⏳</span>
-      <span class="upload-name">${f.name}</span>
-      <div class="upload-bar-wrap"><div class="upload-bar-fill" style="width:0%"></div></div>`;
-    listEl.appendChild(el);
-    return {file:f, el};
+/* EXPLORADOR */
+async function loadExp(tipo,caminho){
+  S.exp={tipo,caminho:caminho||""};document.getElementById("expTipo").value=tipo;
+  updateBreadcrumb();
+  const grid=document.getElementById("fileGrid");
+  grid.innerHTML=`<div style="grid-column:1/-1"><div class="pdf-load" style="padding:48px"><div class="spin spin-lg"></div></div></div>`;
+  try{const p=new URLSearchParams({tipo,caminho:caminho||""});const d=await fetch(`/explorar?${p}`).then(r=>r.json());renderExp(d);}
+  catch(e){toast("error","Erro ao carregar pasta");grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><p>Erro ao carregar.</p></div>`;}
+}
+
+function renderExp({pastas,arquivos}){
+  const grid=document.getElementById("fileGrid");let html="";
+  pastas.forEach(p=>{
+    const nc=S.exp.caminho?S.exp.caminho+"/"+p:p;
+    html+=`<div class="fi" onclick="loadExp('${S.exp.tipo}','${nc}')" oncontextmenu="showCtx(event,'folder','${p}')"><span class="fi-icon">📁</span><div class="fi-name">${p}</div></div>`;
   });
+  arquivos.filter(a=>!a.startsWith(".")).forEach(a=>{
+    html+=`<div class="fi" onclick="openFile('${S.exp.tipo}','${S.exp.caminho}','${a}',null)" oncontextmenu="showCtx(event,'file','${a}')"><span class="fi-icon">${fileIcon(a)}</span><div class="fi-name">${a}</div></div>`;
+  });
+  grid.innerHTML=html||`<div style="grid-column:1/-1"><div class="empty"><div class="empty-ico">📂</div><h4>Pasta vazia</h4><p>Arraste arquivos para fazer upload.</p></div></div>`;
+}
 
-  for (const {file, el} of entries) {
-    const fill  = el.querySelector(".upload-bar-fill");
-    const icon  = el.querySelector(".upload-status");
-    const fd    = new FormData();
-    fd.append("files", file);
-    fd.append("tipo", state.explorer.tipo);
-    fd.append("caminho", state.explorer.caminho);
+function updateBreadcrumb(){
+  const el=document.getElementById("breadcrumb");const{tipo,caminho}=S.exp;
+  let html=`<span class="bc-item" onclick="loadExp('${tipo}','')">Raiz</span><span class="bc-sep">›</span><span class="bc-item" onclick="loadExp('${tipo}','')">${tipo}</span>`;
+  if(caminho)caminho.split("/").forEach((p,i,arr)=>{const sub=arr.slice(0,i+1).join("/");html+=`<span class="bc-sep">›</span><span class="bc-item" onclick="loadExp('${tipo}','${sub}')">${p}</span>`;});
+  el.innerHTML=html;
+}
 
-    fill.style.width = "40%";
-    try {
-      const res  = await fetch("/upload_explorer", {method:"POST", body:fd});
-      const data = await res.json();
-      fill.style.width = "100%";
+function goBack(){const parts=S.exp.caminho.split("/").filter(Boolean);parts.pop();loadExp(S.exp.tipo,parts.join("/"));}
+function onDov(e){e.preventDefault();document.getElementById("dropZone").classList.add("dov");}
+function onDol(){document.getElementById("dropZone").classList.remove("dov");}
+function onDrop(e){e.preventDefault();document.getElementById("dropZone").classList.remove("dov");handleFiles(e.dataTransfer.files);}
+function handleFiles(files){if(files.length)uploadFiles(Array.from(files));}
 
-      if (data.ok) {
-        icon.textContent = "✅";
-        toast("success","Upload concluído", file.name);
-      } else {
-        icon.textContent = "❌";
-        const err = data.resultados?.[0]?.erro || data.erro || "Erro desconhecido";
-        toast("error","Erro no upload", err);
-      }
-    } catch(e) {
-      icon.textContent = "❌";
-      fill.style.background = "var(--danger)";
-      toast("error","Erro de conexão", file.name);
-    }
-    setTimeout(() => el.remove(), 3000);
+async function uploadFiles(files){
+  const listEl=document.getElementById("uploadList");
+  const entries=files.map(f=>{
+    const el=document.createElement("div");el.className="upload-row";
+    el.innerHTML=`<span>⏳</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span><div class="up-bar"><div class="up-fill" style="width:0%"></div></div>`;
+    listEl.appendChild(el);return{file:f,el};
+  });
+  for(const{file,el}of entries){
+    const fill=el.querySelector(".up-fill");const ico=el.querySelector("span");
+    const fd=new FormData();fd.append("files",file);fd.append("tipo",S.exp.tipo);fd.append("caminho",S.exp.caminho);
+    fill.style.width="35%";
+    try{
+      const res=await fetch("/upload_explorer",{method:"POST",body:fd});const data=await res.json();fill.style.width="100%";
+      if(data.ok){ico.textContent="✅";toast("success","Upload concluído",file.name);}
+      else{ico.textContent="❌";toast("error","Erro no upload",data.resultados?.[0]?.erro||data.erro||"");}
+    }catch(e){ico.textContent="❌";fill.style.background="var(--rose)";toast("error","Erro de conexão",file.name);}
+    setTimeout(()=>el.remove(),3200);
   }
-
-  await loadFiles();
-  loadExplorer(state.explorer.tipo, state.explorer.caminho);
-  loadDashboard();
+  await loadFiles();loadExp(S.exp.tipo,S.exp.caminho);loadDashboard();
 }
 
-// ──────────── CRIAR PASTA ────────────
-async function createFolder() {
-  const nome = document.getElementById("newFolderInput").value.trim();
-  if (!nome) { toast("warn","Digite o nome da pasta"); return; }
-
-  try {
-    const res = await fetch("/criar_pasta", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({tipo:state.explorer.tipo, caminho:state.explorer.caminho, nome}),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      document.getElementById("newFolderInput").value = "";
-      toast("success", `Pasta "${nome}" criada`);
-      loadExplorer(state.explorer.tipo, state.explorer.caminho);
-    } else {
-      toast("error","Erro ao criar pasta", data.erro);
-    }
-  } catch(e) {
-    toast("error","Erro de conexão");
-  }
+async function createFolder(){
+  const nome=document.getElementById("newFolderInp").value.trim();if(!nome){toast("warn","Digite o nome da pasta");return;}
+  try{
+    const r=await fetch("/criar_pasta",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tipo:S.exp.tipo,caminho:S.exp.caminho,nome})}).then(r=>r.json());
+    if(r.ok){document.getElementById("newFolderInp").value="";toast("success",`Pasta "${nome}" criada`);loadExp(S.exp.tipo,S.exp.caminho);}
+    else toast("error","Erro ao criar pasta",r.erro);
+  }catch(e){toast("error","Erro de conexão");}
 }
 
-// ──────────── CONTEXT MENU ────────────
-function showCtx(e, itemType, nome) {
-  e.preventDefault();
-  state.ctx = {type: itemType, nome};
-  const menu = document.getElementById("ctxMenu");
-  menu.style.top  = e.pageY + "px";
-  menu.style.left = e.pageX + "px";
-  menu.classList.add("open");
+/* CONTEXT MENU */
+function showCtx(e,type,nome){
+  e.preventDefault();S.ctx={type,nome};
+  const m=document.getElementById("ctxMenu");m.style.top=e.pageY+"px";m.style.left=e.pageX+"px";m.classList.add("open");
+  document.getElementById("ctxDel").style.display=(type==="file"&&S.tipo==="admin")?"flex":"none";
+}
+document.addEventListener("click",()=>document.getElementById("ctxMenu").classList.remove("open"));
+function ctxView(){if(S.ctx?.type==="file")openFile(S.exp.tipo,S.exp.caminho,S.ctx.nome,null);}
+function ctxIndex(){if(S.ctx?.type==="file")openSidxModal(null,S.exp.tipo,S.exp.caminho,S.ctx.nome);}
+function ctxDownload(){if(S.ctx?.type==="file")downloadFile(S.exp.tipo,S.exp.caminho,S.ctx.nome);}
+function ctxDelete(){if(S.ctx?.type==="file")deleteFile(S.exp.tipo,S.exp.caminho,S.ctx.nome,null);}
 
-  // só mostra excluir para arquivos e admins
-  document.getElementById("ctxDelete").style.display =
-    (itemType === "file" && state.tipo === "admin") ? "flex" : "none";
+/* USUÁRIOS */
+async function loadUsers(){
+  if(S.tipo!=="admin")return;
+  const r=await fetch("/usuarios").then(r=>r.json());
+  document.getElementById("usersTbody").innerHTML=r.map(u=>`
+    <tr><td>${u.username}</td><td><span class="badge ${u.tipo==="admin"?"b-blue":"b-green"}">${u.tipo}</span></td>
+    <td><button class="btn btn-rose btn-sm" onclick="deleteUser(${u.id},'${u.username}',this)">Remover</button></td></tr>
+  `).join("")||`<tr><td colspan="3"><div class="empty" style="padding:20px">Nenhum usuário</div></td></tr>`;
 }
-document.addEventListener("click", () => document.getElementById("ctxMenu").classList.remove("open"));
-
-function ctxOpen() {
-  if (state.ctx?.type === "file")
-    openFile(state.explorer.tipo, state.explorer.caminho, state.ctx.nome);
+async function createUser(e){
+  e.preventDefault();const fd=new FormData(document.getElementById("userForm"));
+  try{await fetch("/usuarios/novo",{method:"POST",body:fd});toast("success","Usuário criado");document.getElementById("userForm").reset();loadUsers();}
+  catch(e){toast("error","Erro ao criar usuário");}
 }
-function ctxDownload() {
-  if (state.ctx?.type === "file")
-    downloadFile(state.explorer.tipo, state.explorer.caminho, state.ctx.nome);
-}
-function ctxDeleteItem() {
-  if (state.ctx?.type === "file")
-    deleteFile(state.explorer.tipo, state.explorer.caminho, state.ctx.nome, null);
-}
-
-// ──────────── USUÁRIOS ────────────
-async function loadUsers() {
-  if (state.tipo !== "admin") return;
-  try {
-    const users = await fetch("/usuarios").then(r=>r.json());
-    const tbody = document.getElementById("usersTableBody");
-    tbody.innerHTML = users.map(u => `
-      <tr>
-        <td>${u.username}</td>
-        <td><span class="badge ${u.tipo==='admin'?'badge-blue':'badge-green'}">${u.tipo}</span></td>
-        <td>
-          <button class="btn btn-danger-ghost btn-sm" onclick="deleteUser(${u.id},'${u.username}',this)">Remover</button>
-        </td>
-      </tr>`).join("") || `<tr><td colspan="3"><div class="empty-state" style="padding:24px">Nenhum usuário</div></td></tr>`;
-  } catch(e) {
-    toast("error","Erro ao carregar usuários");
-  }
+async function deleteUser(id,nome,btn){
+  if(!confirm(`Remover "${nome}"?`))return;btn.disabled=true;
+  const d=await fetch(`/usuarios/${id}`,{method:"DELETE"}).then(r=>r.json());
+  if(d.ok){toast("success","Usuário removido");loadUsers();}else{toast("error","Erro",d.erro);btn.disabled=false;}
 }
 
-async function createUser(e) {
-  e.preventDefault();
-  const form = document.getElementById("userForm");
-  const fd   = new FormData(form);
-  try {
-    await fetch("/usuarios/novo", {method:"POST", body:fd});
-    toast("success","Usuário criado com sucesso");
-    form.reset();
-    loadUsers();
-  } catch(err) {
-    toast("error","Erro ao criar usuário");
-  }
-}
+/* RESPONSIVE */
+(()=>{const mq=window.matchMedia("(max-width:700px)");const fix=e=>{const g=document.getElementById("dashGrid");if(g)g.style.gridTemplateColumns=e.matches?"1fr":"1fr 1fr";};mq.addEventListener("change",fix);fix(mq);})();
 
-async function deleteUser(id, nome, btn) {
-  if (!confirm(`Remover o usuário "${nome}"?`)) return;
-  btn.disabled = true;
-  try {
-    const res  = await fetch(`/usuarios/${id}`, {method:"DELETE"});
-    const data = await res.json();
-    if (data.ok) { toast("success","Usuário removido"); loadUsers(); }
-    else toast("error","Erro ao remover", data.erro);
-  } catch(e) {
-    toast("error","Erro de conexão");
-    btn.disabled = false;
-  }
-}
-
-// ──────────── RESPONSIVE GRID FIXES ────────────
-(function(){
-  const mq = window.matchMedia("(max-width:700px)");
-  function fix(e) {
-    const g = document.getElementById("dashGridCols");
-    const u = document.getElementById("usersGrid");
-    if (g) g.style.gridTemplateColumns = e.matches?"1fr":"1fr 1fr";
-    if (u) u.style.gridTemplateColumns = e.matches?"1fr":"340px 1fr";
-  }
-  mq.addEventListener("change", fix);
-  fix(mq);
-})();
-
-// ──────────── START ────────────
 init();
 </script>
 </body>
