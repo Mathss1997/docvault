@@ -28,7 +28,6 @@ class Indexador(Base):
     id           = Column(Integer, primary_key=True, index=True)
     documento_id = Column(Integer, ForeignKey("documentos.id"), unique=True, nullable=False)
 
-    # Campos genéricos
     numero       = Column(String)
     ano          = Column(String)
     data_doc     = Column(String)
@@ -37,17 +36,8 @@ class Indexador(Base):
     orgao        = Column(String)
     valor        = Column(String)
     situacao     = Column(String)
-
-    # Campos extras por categoria (JSON serializado)
-    # Ex: {"fornecedor": "Empresa X", "modalidade": "Pregão"}
     extras       = Column(Text, default="{}")
-
-    # Tags livres armazenadas como CSV simples
-    # Ex: "urgente,2024,prefeitura,contrato"
-    # Sem tabela intermediária — mais simples e sem risco de mapper error
     tags_csv     = Column(Text, default="")
-
-    # Timestamps
     criado_em    = Column(String)
     atualizado_em = Column(String)
 
@@ -61,3 +51,32 @@ class Usuario(Base):
     username = Column(String, unique=True)
     senha    = Column(String)
     tipo     = Column(String)
+
+
+class LogAtividade(Base):
+    """
+    Registro imutável de todas as ações relevantes do sistema.
+    Nunca atualizado — apenas inserido.
+    """
+    __tablename__ = "logs_atividade"
+
+    id         = Column(Integer, primary_key=True, index=True)
+
+    # Quem fez
+    usuario    = Column(String, index=True, nullable=False)
+
+    # O que fez — valores fixos:
+    # LOGIN | LOGOUT | UPLOAD | DOWNLOAD | DELETE | CREATE_FOLDER | INDEXAR
+    acao       = Column(String, index=True, nullable=False)
+
+    # Detalhes livres (nome do arquivo, pasta, etc.)
+    detalhe    = Column(Text)
+
+    # Contexto adicional (categoria, caminho, etc.)
+    contexto   = Column(String)
+
+    # IP de origem
+    ip         = Column(String)
+
+    # Timestamp ISO completo — nunca nulo
+    criado_em  = Column(String, index=True, nullable=False)
