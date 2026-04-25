@@ -1,59 +1,59 @@
 """
-Rotas de indexadores — adicionar ao main.py via include_router ou copiar diretamente.
+Router de indexadores — incluir no main.py via app.include_router(indexadores_router)
 """
 import json
+from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException, Body, Query
+from sqlalchemy import or_
 from app.database import SessionLocal
-from app.models import Documento, Indexador, Tag, tag_documento
-from sqlalchemy import or_, and_
+from app.models import Documento, Indexador
 
 router = APIRouter(prefix="/indexadores", tags=["indexadores"])
 
-# ─── schemas de campos estruturados por categoria ───────────────────────────
+# ─── Campos por categoria ────────────────────────────────────────────────────
 CAMPOS_CATEGORIA = {
     "empenhos": [
-        {"key": "numero",       "label": "Nº do Empenho",    "type": "text"},
-        {"key": "ano",          "label": "Ano",               "type": "text"},
-        {"key": "data_doc",     "label": "Data do Empenho",   "type": "date"},
-        {"key": "responsavel",  "label": "Ordenador",         "type": "text"},
-        {"key": "orgao",        "label": "Unidade Gestora",   "type": "text"},
-        {"key": "valor",        "label": "Valor (R$)",        "type": "text"},
-        {"key": "assunto",      "label": "Objeto / Descrição","type": "textarea"},
-        {"key": "situacao",     "label": "Situação",          "type": "select",
+        {"key": "numero",      "label": "Nº do Empenho",     "type": "text"},
+        {"key": "ano",         "label": "Ano",                "type": "text"},
+        {"key": "data_doc",    "label": "Data do Empenho",    "type": "date"},
+        {"key": "responsavel", "label": "Ordenador",          "type": "text"},
+        {"key": "orgao",       "label": "Unidade Gestora",    "type": "text"},
+        {"key": "valor",       "label": "Valor (R$)",         "type": "text"},
+        {"key": "assunto",     "label": "Objeto / Descrição", "type": "textarea"},
+        {"key": "situacao",    "label": "Situação",           "type": "select",
          "options": ["Ativo", "Encerrado", "Pendente", "Cancelado"]},
-        # extras específicos
-        {"key": "fornecedor",   "label": "Fornecedor",        "type": "text",   "extra": True},
-        {"key": "fonte",        "label": "Fonte de Recurso",  "type": "text",   "extra": True},
-        {"key": "programa",     "label": "Programa",          "type": "text",   "extra": True},
+        {"key": "fornecedor",  "label": "Fornecedor",         "type": "text",  "extra": True},
+        {"key": "fonte",       "label": "Fonte de Recurso",   "type": "text",  "extra": True},
+        {"key": "programa",    "label": "Programa",           "type": "text",  "extra": True},
     ],
     "licitacoes": [
-        {"key": "numero",       "label": "Nº do Processo",    "type": "text"},
-        {"key": "ano",          "label": "Ano",               "type": "text"},
-        {"key": "data_doc",     "label": "Data de Abertura",  "type": "date"},
-        {"key": "responsavel",  "label": "Pregoeiro / Resp.", "type": "text"},
-        {"key": "orgao",        "label": "Órgão Licitante",   "type": "text"},
-        {"key": "valor",        "label": "Valor Estimado",    "type": "text"},
-        {"key": "assunto",      "label": "Objeto",            "type": "textarea"},
-        {"key": "situacao",     "label": "Situação",          "type": "select",
+        {"key": "numero",      "label": "Nº do Processo",     "type": "text"},
+        {"key": "ano",         "label": "Ano",                "type": "text"},
+        {"key": "data_doc",    "label": "Data de Abertura",   "type": "date"},
+        {"key": "responsavel", "label": "Pregoeiro / Resp.",  "type": "text"},
+        {"key": "orgao",       "label": "Órgão Licitante",    "type": "text"},
+        {"key": "valor",       "label": "Valor Estimado",     "type": "text"},
+        {"key": "assunto",     "label": "Objeto",             "type": "textarea"},
+        {"key": "situacao",    "label": "Situação",           "type": "select",
          "options": ["Em andamento", "Homologada", "Revogada", "Deserta", "Encerrada"]},
-        {"key": "modalidade",   "label": "Modalidade",        "type": "select",  "extra": True,
+        {"key": "modalidade",  "label": "Modalidade",         "type": "select", "extra": True,
          "options": ["Pregão Eletrônico", "Pregão Presencial", "Concorrência",
                      "Tomada de Preços", "Convite", "Dispensa", "Inexigibilidade"]},
-        {"key": "fornecedor",   "label": "Vencedor",          "type": "text",   "extra": True},
+        {"key": "fornecedor",  "label": "Vencedor",           "type": "text",  "extra": True},
     ],
     "contratos": [
-        {"key": "numero",       "label": "Nº do Contrato",    "type": "text"},
-        {"key": "ano",          "label": "Ano",               "type": "text"},
-        {"key": "data_doc",     "label": "Data de Assinatura","type": "date"},
-        {"key": "responsavel",  "label": "Gestor do Contrato","type": "text"},
-        {"key": "orgao",        "label": "Órgão",             "type": "text"},
-        {"key": "valor",        "label": "Valor Total",       "type": "text"},
-        {"key": "assunto",      "label": "Objeto",            "type": "textarea"},
-        {"key": "situacao",     "label": "Situação",          "type": "select",
+        {"key": "numero",      "label": "Nº do Contrato",     "type": "text"},
+        {"key": "ano",         "label": "Ano",                "type": "text"},
+        {"key": "data_doc",    "label": "Data de Assinatura", "type": "date"},
+        {"key": "responsavel", "label": "Gestor do Contrato", "type": "text"},
+        {"key": "orgao",       "label": "Órgão",              "type": "text"},
+        {"key": "valor",       "label": "Valor Total",        "type": "text"},
+        {"key": "assunto",     "label": "Objeto",             "type": "textarea"},
+        {"key": "situacao",    "label": "Situação",           "type": "select",
          "options": ["Vigente", "Encerrado", "Rescindido", "Em renovação"]},
-        {"key": "fornecedor",   "label": "Contratada",        "type": "text",   "extra": True},
-        {"key": "vigencia",     "label": "Vigência",          "type": "text",   "extra": True},
-        {"key": "aditivo",      "label": "Aditivos",          "type": "text",   "extra": True},
+        {"key": "fornecedor",  "label": "Contratada",         "type": "text",  "extra": True},
+        {"key": "vigencia",    "label": "Vigência",           "type": "text",  "extra": True},
+        {"key": "aditivo",     "label": "Aditivos",           "type": "text",  "extra": True},
     ],
 }
 
@@ -69,6 +69,8 @@ CAMPOS_GENERICOS = [
      "options": ["Ativo", "Encerrado", "Pendente", "Cancelado"]},
 ]
 
+CAMPOS_FIXOS = {"numero", "ano", "data_doc", "assunto", "responsavel", "orgao", "valor", "situacao"}
+
 
 # ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -78,14 +80,14 @@ def require_auth(request: Request):
     return {"username": request.session["user"], "tipo": request.session["tipo"]}
 
 
-def get_or_create_tag(db, nome: str) -> Tag:
-    nome = nome.strip().lower()[:60]
-    tag = db.query(Tag).filter(Tag.nome == nome).first()
-    if not tag:
-        tag = Tag(nome=nome)
-        db.add(tag)
-        db.flush()
-    return tag
+def tags_from_csv(csv: str) -> list:
+    if not csv:
+        return []
+    return [t.strip() for t in csv.split(",") if t.strip()]
+
+
+def tags_to_csv(tags: list) -> str:
+    return ",".join(t.strip().lower()[:60] for t in tags if t.strip())
 
 
 def indexador_to_dict(idx: Indexador) -> dict:
@@ -95,60 +97,61 @@ def indexador_to_dict(idx: Indexador) -> dict:
     except Exception:
         pass
     return {
-        "id":           idx.id,
-        "documento_id": idx.documento_id,
-        "numero":       idx.numero,
-        "ano":          idx.ano,
-        "data_doc":     idx.data_doc,
-        "assunto":      idx.assunto,
-        "responsavel":  idx.responsavel,
-        "orgao":        idx.orgao,
-        "valor":        idx.valor,
-        "situacao":     idx.situacao,
-        "extras":       extras,
-        "tags":         [t.nome for t in (idx.tags or [])],
-        "criado_em":    idx.criado_em,
+        "id":            idx.id,
+        "documento_id":  idx.documento_id,
+        "numero":        idx.numero,
+        "ano":           idx.ano,
+        "data_doc":      idx.data_doc,
+        "assunto":       idx.assunto,
+        "responsavel":   idx.responsavel,
+        "orgao":         idx.orgao,
+        "valor":         idx.valor,
+        "situacao":      idx.situacao,
+        "extras":        extras,
+        "tags":          tags_from_csv(idx.tags_csv),
+        "criado_em":     idx.criado_em,
         "atualizado_em": idx.atualizado_em,
     }
 
 
-# ─── GET /indexadores/campos?categoria=empenhos ─────────────────────────────
+# ─── GET /indexadores/campos ─────────────────────────────────────────────────
 @router.get("/campos")
 def get_campos(categoria: str = ""):
     campos = CAMPOS_CATEGORIA.get(categoria.lower(), CAMPOS_GENERICOS)
     return {"campos": campos}
 
 
-# ─── GET /indexadores/tags — autocomplete ───────────────────────────────────
+# ─── GET /indexadores/tags — autocomplete ────────────────────────────────────
 @router.get("/tags")
 def list_tags(request: Request, q: str = ""):
     require_auth(request)
     db = SessionLocal()
     try:
-        query = db.query(Tag)
-        if q:
-            query = query.filter(Tag.nome.ilike(f"%{q}%"))
-        tags = query.order_by(Tag.nome).limit(30).all()
-        return [t.nome for t in tags]
+        # Busca tags nos csvs existentes
+        rows = db.query(Indexador.tags_csv).filter(Indexador.tags_csv != "").all()
+        todas = set()
+        for (csv,) in rows:
+            for t in tags_from_csv(csv):
+                if not q or q.lower() in t:
+                    todas.add(t)
+        return sorted(todas)[:30]
     finally:
         db.close()
 
 
-# ─── GET /indexadores/{documento_id} ────────────────────────────────────────
+# ─── GET /indexadores/{documento_id} ─────────────────────────────────────────
 @router.get("/{documento_id}")
 def get_indexador(documento_id: int, request: Request):
     require_auth(request)
     db = SessionLocal()
     try:
         idx = db.query(Indexador).filter(Indexador.documento_id == documento_id).first()
-        if not idx:
-            return {"indexador": None}
-        return {"indexador": indexador_to_dict(idx)}
+        return {"indexador": indexador_to_dict(idx) if idx else None}
     finally:
         db.close()
 
 
-# ─── POST /indexadores/{documento_id} — salvar / atualizar ──────────────────
+# ─── POST /indexadores/{documento_id} — salvar / atualizar ───────────────────
 @router.post("/{documento_id}")
 def salvar_indexador(documento_id: int, request: Request, data: dict = Body(...)):
     require_auth(request)
@@ -158,33 +161,20 @@ def salvar_indexador(documento_id: int, request: Request, data: dict = Body(...)
         if not doc:
             raise HTTPException(404, "Documento não encontrado")
 
-        # separa campos fixos de extras
-        campos_fixos = {"numero", "ano", "data_doc", "assunto",
-                        "responsavel", "orgao", "valor", "situacao"}
-        fixos  = {k: v for k, v in data.items() if k in campos_fixos}
-        extras = {k: v for k, v in data.items()
-                  if k not in campos_fixos and k != "tags"}
-        tags_raw = data.get("tags", [])
+        fixos  = {k: v for k, v in data.items() if k in CAMPOS_FIXOS}
+        extras = {k: v for k, v in data.items() if k not in CAMPOS_FIXOS and k != "tags"}
+        tags   = data.get("tags", [])
 
         idx = db.query(Indexador).filter(Indexador.documento_id == documento_id).first()
         if not idx:
-            idx = Indexador(documento_id=documento_id)
+            idx = Indexador(documento_id=documento_id, criado_em=str(datetime.now()))
             db.add(idx)
 
-        # atualiza fixos
         for k, v in fixos.items():
             setattr(idx, k, v or None)
 
-        idx.extras = json.dumps(extras, ensure_ascii=False)
-
-        # atualiza tags
-        idx.tags = []
-        db.flush()
-        for t in tags_raw:
-            if t.strip():
-                idx.tags.append(get_or_create_tag(db, t))
-
-        from datetime import datetime
+        idx.extras       = json.dumps(extras, ensure_ascii=False)
+        idx.tags_csv     = tags_to_csv(tags)
         idx.atualizado_em = str(datetime.now())
 
         db.commit()
@@ -200,18 +190,18 @@ def salvar_indexador(documento_id: int, request: Request, data: dict = Body(...)
         db.close()
 
 
-# ─── GET /indexadores/busca — busca avançada ────────────────────────────────
+# ─── GET /indexadores/busca/avancada ─────────────────────────────────────────
 @router.get("/busca/avancada")
 def busca_avancada(
     request: Request,
-    q:           str = Query("", description="Busca livre (nome do arquivo ou assunto)"),
+    q:           str = Query(""),
     categoria:   str = Query(""),
     numero:      str = Query(""),
     ano:         str = Query(""),
     responsavel: str = Query(""),
     orgao:       str = Query(""),
     situacao:    str = Query(""),
-    tags:        str = Query("", description="tags separadas por vírgula"),
+    tags:        str = Query(""),
     data_de:     str = Query(""),
     data_ate:    str = Query(""),
 ):
@@ -223,19 +213,14 @@ def busca_avancada(
             .outerjoin(Indexador, Indexador.documento_id == Documento.id)
         )
 
-        # filtros no Documento
         if q:
-            query = query.filter(
-                or_(
-                    Documento.nome.ilike(f"%{q}%"),
-                    Indexador.assunto.ilike(f"%{q}%"),
-                    Indexador.numero.ilike(f"%{q}%"),
-                )
-            )
+            query = query.filter(or_(
+                Documento.nome.ilike(f"%{q}%"),
+                Indexador.assunto.ilike(f"%{q}%"),
+                Indexador.numero.ilike(f"%{q}%"),
+            ))
         if categoria:
             query = query.filter(Documento.categoria == categoria)
-
-        # filtros no Indexador
         if numero:
             query = query.filter(Indexador.numero.ilike(f"%{numero}%"))
         if ano:
@@ -250,42 +235,31 @@ def busca_avancada(
             query = query.filter(Indexador.data_doc >= data_de)
         if data_ate:
             query = query.filter(Indexador.data_doc <= data_ate)
-
-        # filtro por tags
         if tags:
-            tag_list = [t.strip().lower() for t in tags.split(",") if t.strip()]
-            for tag_nome in tag_list:
-                query = query.filter(
-                    Documento.id.in_(
-                        db.query(tag_documento.c.documento_id)
-                        .join(Tag, Tag.id == tag_documento.c.tag_id)
-                        .filter(Tag.nome == tag_nome)
-                        .scalar_subquery()
-                    )
-                )
+            for tag in [t.strip().lower() for t in tags.split(",") if t.strip()]:
+                query = query.filter(Indexador.tags_csv.ilike(f"%{tag}%"))
 
         rows = query.order_by(Documento.data.desc()).limit(200).all()
 
-        resultados = []
-        for doc, idx in rows:
-            item = {
-                "id":       doc.id,
-                "nome":     doc.nome,
+        resultados = [
+            {
+                "id":        doc.id,
+                "nome":      doc.nome,
                 "categoria": doc.categoria,
-                "caminho":  doc.caminho or "",
-                "usuario":  doc.usuario,
-                "data":     doc.data,
+                "caminho":   doc.caminho or "",
+                "usuario":   doc.usuario,
+                "data":      doc.data,
                 "indexador": indexador_to_dict(idx) if idx else None,
             }
-            resultados.append(item)
-
+            for doc, idx in rows
+        ]
         return {"total": len(resultados), "resultados": resultados}
 
     finally:
         db.close()
 
 
-# ─── GET /indexadores/lista — todos indexados (para a seção Indexadores) ────
+# ─── GET /indexadores/lista/todos ────────────────────────────────────────────
 @router.get("/lista/todos")
 def listar_todos(request: Request, categoria: str = ""):
     require_auth(request)

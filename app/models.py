@@ -1,15 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
-
-# ─── Tabela de associação (declarada ANTES dos modelos que a usam) ───────────
-tag_documento = Table(
-    "tag_documento",
-    Base.metadata,
-    Column("documento_id", Integer, ForeignKey("documentos.id"), primary_key=True),
-    Column("tag_id",       Integer, ForeignKey("tags.id"),       primary_key=True),
-)
 
 
 class Documento(Base):
@@ -30,13 +22,6 @@ class Documento(Base):
     )
 
 
-class Tag(Base):
-    __tablename__ = "tags"
-
-    id   = Column(Integer, primary_key=True, index=True)
-    nome = Column(String, unique=True, index=True)
-
-
 class Indexador(Base):
     __tablename__ = "indexadores"
 
@@ -54,20 +39,19 @@ class Indexador(Base):
     situacao     = Column(String)
 
     # Campos extras por categoria (JSON serializado)
+    # Ex: {"fornecedor": "Empresa X", "modalidade": "Pregão"}
     extras       = Column(Text, default="{}")
+
+    # Tags livres armazenadas como CSV simples
+    # Ex: "urgente,2024,prefeitura,contrato"
+    # Sem tabela intermediária — mais simples e sem risco de mapper error
+    tags_csv     = Column(Text, default="")
 
     # Timestamps
     criado_em    = Column(String)
     atualizado_em = Column(String)
 
-    # Relacionamentos
     documento = relationship("Documento", back_populates="indexador")
-
-    tags = relationship(
-        "Tag",
-        secondary=tag_documento,   # objeto Table direto, não string
-        lazy="joined",
-    )
 
 
 class Usuario(Base):
