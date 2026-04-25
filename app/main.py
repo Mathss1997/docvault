@@ -1,413 +1,544 @@
-from fastapi import FastAPI, UploadFile, File, Form, Query, Body, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+import os
+import logging
+from datetime import datetime
+from dotenv import load_dotenv
+from fastapi import (
+    FastAPI, UploadFile, File, Form, Query,
+    Body, Request, Depends, HTTPException, status
+)
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-
-import os
-from datetime import datetime
-from urllib.parse import unquote
-import requests
-
-# ====================== SUPABASE ======================
-import os
-from dotenv import load_dotenv
 from supabase import create_client
+from passlib.context import CryptContext
+from sqlalchemy import func, text
 
-# Carrega as variáveis do arquivo .env (raiz do projeto)
-load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-print("🔑 SUPABASE KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "NÃO DEFINIDA")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("""
-    ❌ ERRO: SUPABASE_URL ou SUPABASE_KEY não foram encontrados!
-    Crie um arquivo .env na raiz do projeto (C:\\Users\\nmath\\ged_novo) com:
-    
-    SUPABASE_URL=https://eqykwinmscoziwybpxsd.supabase.co
-    SUPABASE_KEY=sb_publishable_sua_chave_aqui
-    """)
-
-print(f"✅ Supabase carregado: {SUPABASE_URL}")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Banco local (SQLAlchemy)
 from app.database import engine, SessionLocal
 from app.models import Base, Documento, Usuario
 
-# Cria tabelas
+# ─────────────────────────────────────────────
+# CONFIG & LOGGING
+# ─────────────────────────────────────────────
+load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+log = logging.getLogger("docvault")
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SECRET_KEY   = os.getenv("SECRET_KEY", "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR")
+SUPABASE_PUBLIC_URL = os.getenv("SUPABASE_PUBLIC_URL", SUPABASE_URL)
+
+ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".docx", ".xlsx", ".txt"}
+MAX_FILE_SIZE_MB   = 20
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError(
+        "SUPABASE_URL e SUPABASE_KEY são obrigatórios. "
+        "Defina-as no arquivo .env ou nas variáveis de ambiente."
+    )
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+log.info("Supabase conectado: %s", SUPABASE_URL)
+
+# ─────────────────────────────────────────────
+# APP
+# ─────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
 
-# Configurações
-app = FastAPI()
-@app.on_event("startup")
-def debug_supabase():
-    print("🚀 DEBUG STARTUP")
-    print("🔑 SUPABASE KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "NÃO DEFINIDA")
-
+app = FastAPI(title="DocVault", version="2.0.0")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.add_middleware(SessionMiddleware, secret_key="segredo123")
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
-templates = Jinja2Templates(directory="app/templates")
-
-# Criptografia de senha
-from passlib.context import CryptContext
+templates  = Jinja2Templates(directory="app/templates")
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# ─────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────
 
-# ====================== ROTAS ======================
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
 
-    print("🚀 DEBUG REQUEST")
-    print("🔑 SUPABASE KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "NÃO DEFINIDA")
+def current_user(request: Request) -> dict:
+    """Retorna o usuário da sessão ou lança 401."""
+    user = request.session.get("user")
+    tipo = request.session.get("tipo")
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Não autenticado"
+        )
+    return {"username": user, "tipo": tipo}
 
-    if "user" not in request.session:
-        return RedirectResponse("/login")
 
-    file_path = os.path.join(BASE_DIR, "..", "templates", "dashboard.html")
-    with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
+def require_admin(request: Request) -> dict:
+    user = current_user(request)
+    if user["tipo"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a administradores"
+        )
+    return user
 
+
+def validate_file(filename: str, size: int) -> None:
+    ext = os.path.splitext(filename)[-1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tipo de arquivo não permitido: {ext}. "
+                   f"Permitidos: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    if size > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Arquivo muito grande ({size // (1024*1024)} MB). "
+                   f"Máximo: {MAX_FILE_SIZE_MB} MB"
+        )
+
+
+def build_storage_path(tipo: str, caminho: str, filename: str) -> str:
+    parts = [tipo] + [p for p in caminho.split("/") if p] + [filename]
+    return "/".join(parts)
+
+
+def supabase_public_url(path: str) -> str:
+    return f"{SUPABASE_PUBLIC_URL}/storage/v1/object/public/documentos/{path}"
+
+
+# ─────────────────────────────────────────────
+# EXCEÇÃO → JSON (para fetch calls)
+# ─────────────────────────────────────────────
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if request.headers.get("accept", "").startswith("application/json") or \
+       request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"erro": exc.detail}
+        )
+    # Para rotas de página, redireciona pro login
+    return RedirectResponse("/login")
+
+
+# ─────────────────────────────────────────────
+# AUTENTICAÇÃO
+# ─────────────────────────────────────────────
 @app.get("/login", response_class=HTMLResponse)
 def login_page():
-    file_path = os.path.join(BASE_DIR, "..", "templates", "login.html")
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open("templates/login.html", "r", encoding="utf-8") as f:
         return f.read()
+
 
 @app.post("/login")
 def login(request: Request, usuario: str = Form(...), senha: str = Form(...)):
     db = SessionLocal()
-    user = db.query(Usuario).filter(Usuario.username == usuario).first()
-    db.close()
+    try:
+        user = db.query(Usuario).filter(Usuario.username == usuario).first()
+    finally:
+        db.close()
 
     if user and pwd_context.verify(senha, user.senha):
         request.session["user"] = user.username
         request.session["tipo"] = user.tipo
+        log.info("Login: %s", user.username)
         return RedirectResponse("/", status_code=302)
 
-    return RedirectResponse("/login", status_code=302)
+    log.warning("Tentativa de login inválida para: %s", usuario)
+    return RedirectResponse("/login?erro=1", status_code=302)
+
 
 @app.get("/logout")
 def logout(request: Request):
+    username = request.session.get("user", "desconhecido")
     request.session.clear()
+    log.info("Logout: %s", username)
     return RedirectResponse("/login")
 
-# Upload
-@app.post("/upload")
-async def upload(
-    request: Request,
-    file: UploadFile = File(...),
-    categoria: str = Form(...),
-    pasta: str = Form(...)
-):
+
+# ─────────────────────────────────────────────
+# PÁGINA PRINCIPAL
+# ─────────────────────────────────────────────
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
     if "user" not in request.session:
         return RedirectResponse("/login")
+    with open("templates/dashboard.html", "r", encoding="utf-8") as f:
+        return f.read()
 
-    usuario = request.session["user"]
 
-    try:
-        conteudo = await file.read()
-        if pasta:
-            caminho_supabase = f"{categoria}/{pasta}/{file.filename}"
-        else:
-            caminho_supabase = f"{categoria}/{file.filename}"
-
-        supabase.storage.from_("documentos").upload(
-            path=caminho_supabase,
-            file=conteudo,
-            file_options={"content-type": "application/pdf"}
-        
-        )
-    except Exception as e:
-        print("ERRO NO UPLOAD:", str(e))
-        return {"erro": str(e)}
-
-    db = SessionLocal()
-    novo_doc = Documento(
-        nome=file.filename,
-        categoria=categoria,
-        caminho=pasta if pasta else "",
-        usuario=usuario,
-        data=str(datetime.now())
-    )
-    db.add(novo_doc)
-    db.commit()
-    db.close()
-
-    return RedirectResponse(url="/", status_code=303)
-   
-
-@app.post("/upload_explorer")
-async def upload_explorer(
-    request: Request,
-    file: UploadFile = File(...),
-    tipo: str = Form(...),
-    caminho: str = Form("")
-):
-    if "user" not in request.session:
-        return {"erro": "Não autenticado"}
-
-    usuario = request.session["user"]
-
-    try:
-        conteudo = await file.read()
-
-        # 🔥 Monta caminho correto no Supabase
-        if caminho:
-            path_supabase = f"{tipo}/{caminho}/{file.filename}"
-        else:
-            path_supabase = f"{tipo}/{file.filename}"
-
-        print(f"[UPLOAD EXPLORER] Enviando para: {path_supabase}")
-
-        response = supabase.storage.from_("documentos").upload(
-            path=path_supabase,
-            file=conteudo
-        )
-
-        print("[UPLOAD EXPLORER] Sucesso:", response)
-        print("📦 TAMANHO:", len(conteudo))
-
-        # 🔥 SALVA NO BANCO (ESSA ERA A PARTE QUE FALTAVA)
-        db = SessionLocal()
-
-        novo_doc = Documento(
-            nome=file.filename,
-            categoria=tipo,
-            caminho=caminho if caminho else "",
-            usuario=usuario,
-            data=str(datetime.now())
-        )
-
-        db.add(novo_doc)
-        db.commit()
-        db.close()
-
-        return {"ok": True, "mensagem": "Arquivo enviado com sucesso"}
-
-    except Exception as e:
-        print("[UPLOAD EXPLORER] ERRO:", str(e))
-        return {"erro": str(e)}
-
-@app.get("/files")
-def list_files():
-    db = SessionLocal()
-    documentos = db.query(Documento).all()
-
-    resultado = {}
-
-    for doc in documentos:
-
-        # 🔥 monta caminho real
-        caminho = doc.caminho.strip("/") if doc.caminho else ""
-
-        if caminho:
-            path = f"{doc.categoria}/{caminho}/{doc.nome}"
-            pasta = f"{doc.categoria}/{caminho}"
-        else:
-            path = f"{doc.categoria}/{doc.nome}"
-            pasta = doc.categoria
-
-        path = path.replace("//", "/")
-
-        # 🔥 verifica no Supabase
-        lista = supabase.storage.from_("documentos").list(pasta)
-
-        existe = any(arq.get("name") == doc.nome for arq in lista)
-
-        if existe:
-            # mantém no resultado
-            if doc.categoria not in resultado:
-                resultado[doc.categoria] = []
-
-            resultado[doc.categoria].append({
-                "nome": doc.nome,
-                "usuario": doc.usuario,
-                "data": doc.data,
-                "caminho": doc.caminho,
-            })
-
-        else:
-            print("🧹 REMOVENDO FANTASMA:", doc.nome)
-
-            # 🔥 remove do banco automaticamente
-            db.delete(doc)
-            db.commit()
-
-    db.close()
-    return resultado
-
+# ─────────────────────────────────────────────
+# USUÁRIO ATUAL
+# ─────────────────────────────────────────────
 @app.get("/user")
 def get_user(request: Request):
     return {
         "usuario": request.session.get("user"),
-        "tipo": request.session.get("tipo")
+        "tipo":    request.session.get("tipo"),
     }
 
+
+# ─────────────────────────────────────────────
+# USUÁRIOS (admin)
+# ─────────────────────────────────────────────
+@app.post("/usuarios/novo")
+def criar_usuario(
+    request: Request,
+    usuario: str = Form(...),
+    senha:   str = Form(...),
+    tipo:    str = Form("user"),
+):
+    require_admin(request)
+    db = SessionLocal()
+    try:
+        if db.query(Usuario).filter(Usuario.username == usuario).first():
+            raise HTTPException(400, "Usuário já existe")
+
+        novo = Usuario(
+            username=usuario,
+            senha=pwd_context.hash(senha),
+            tipo=tipo,
+        )
+        db.add(novo)
+        db.commit()
+        log.info("Usuário criado: %s (%s)", usuario, tipo)
+    finally:
+        db.close()
+
+    return RedirectResponse("/?sucesso=usuario_criado", status_code=303)
+
+
+@app.get("/usuarios")
+def listar_usuarios(request: Request):
+    require_admin(request)
+    db = SessionLocal()
+    try:
+        users = db.query(Usuario).all()
+        return [{"id": u.id, "username": u.username, "tipo": u.tipo} for u in users]
+    finally:
+        db.close()
+
+
+@app.delete("/usuarios/{user_id}")
+def deletar_usuario(user_id: int, request: Request):
+    require_admin(request)
+    db = SessionLocal()
+    try:
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if not user:
+            raise HTTPException(404, "Usuário não encontrado")
+        db.delete(user)
+        db.commit()
+        log.info("Usuário removido: %s", user.username)
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────
+# DASHBOARD
+# ─────────────────────────────────────────────
 @app.get("/dashboard")
-def dashboard():
-    from sqlalchemy import func
-    from app.database import SessionLocal
-    from app.models import Documento
+def dashboard(request: Request):
+    current_user(request)
+    db = SessionLocal()
+    try:
+        total = db.query(func.count(Documento.id)).scalar()
+        categorias = dict(
+            db.query(Documento.categoria, func.count(Documento.id))
+            .group_by(Documento.categoria)
+            .all()
+        )
+        recentes = (
+            db.query(Documento.nome, Documento.categoria, Documento.caminho, Documento.usuario, Documento.data)
+            .order_by(Documento.data.desc())
+            .limit(10)
+            .all()
+        )
+        return {
+            "total": total,
+            "categorias": categorias,
+            "recentes": [
+                {
+                    "nome":      r.nome,
+                    "categoria": r.categoria,
+                    "caminho":   r.caminho,
+                    "usuario":   r.usuario,
+                    "data":      str(r.data),
+                }
+                for r in recentes
+            ],
+        }
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────
+# ARQUIVOS — listagem
+# ─────────────────────────────────────────────
+@app.get("/files")
+def list_files(request: Request):
+    current_user(request)
+    db = SessionLocal()
+    resultado = {}
+
+    try:
+        documentos = db.query(Documento).all()
+
+        for doc in documentos:
+            caminho = (doc.caminho or "").strip("/")
+            pasta   = f"{doc.categoria}/{caminho}" if caminho else doc.categoria
+
+            try:
+                lista = supabase.storage.from_("documentos").list(pasta)
+                existe = any(arq.get("name") == doc.nome for arq in lista)
+            except Exception as e:
+                log.error("Erro ao listar storage para %s: %s", pasta, e)
+                existe = False
+
+            if existe:
+                resultado.setdefault(doc.categoria, []).append({
+                    "nome":    doc.nome,
+                    "usuario": doc.usuario,
+                    "data":    doc.data,
+                    "caminho": doc.caminho or "",
+                })
+            else:
+                log.warning("Arquivo fantasma removido do banco: %s", doc.nome)
+                db.delete(doc)
+                db.commit()
+
+    finally:
+        db.close()
+
+    return resultado
+
+
+# ─────────────────────────────────────────────
+# UPLOAD — explorador (múltiplos arquivos)
+# ─────────────────────────────────────────────
+@app.post("/upload_explorer")
+async def upload_explorer(
+    request: Request,
+    files:   list[UploadFile] = File(...),
+    tipo:    str = Form(...),
+    caminho: str = Form(""),
+):
+    user = current_user(request)
+    resultados = []
+
+    for file in files:
+        conteudo = await file.read()
+        try:
+            validate_file(file.filename, len(conteudo))
+        except HTTPException as e:
+            resultados.append({"nome": file.filename, "erro": e.detail})
+            continue
+
+        path_supabase = build_storage_path(tipo, caminho, file.filename)
+
+        try:
+            supabase.storage.from_("documentos").upload(
+                path=path_supabase,
+                file=conteudo,
+            )
+        except Exception as e:
+            log.error("Erro upload Supabase %s: %s", path_supabase, e)
+            resultados.append({"nome": file.filename, "erro": str(e)})
+            continue
+
+        db = SessionLocal()
+        try:
+            db.add(Documento(
+                nome=file.filename,
+                categoria=tipo,
+                caminho=caminho,
+                usuario=user["username"],
+                data=str(datetime.now()),
+            ))
+            db.commit()
+        finally:
+            db.close()
+
+        log.info("Upload: %s → %s", user["username"], path_supabase)
+        resultados.append({"nome": file.filename, "ok": True})
+
+    erros = [r for r in resultados if "erro" in r]
+    return {
+        "ok":        len(erros) == 0,
+        "resultados": resultados,
+        "mensagem":  f"{len(resultados) - len(erros)}/{len(resultados)} arquivo(s) enviado(s) com sucesso.",
+    }
+
+
+# ─────────────────────────────────────────────
+# UPLOAD — rota legada (formulário simples)
+# ─────────────────────────────────────────────
+@app.post("/upload")
+async def upload(
+    request:   Request,
+    file:      UploadFile = File(...),
+    categoria: str = Form(...),
+    pasta:     str = Form(""),
+):
+    user = current_user(request)
+    conteudo = await file.read()
+    validate_file(file.filename, len(conteudo))
+
+    path_supabase = build_storage_path(categoria, pasta, file.filename)
+
+    try:
+        supabase.storage.from_("documentos").upload(
+            path=path_supabase,
+            file=conteudo,
+            file_options={"content-type": "application/pdf"},
+        )
+    except Exception as e:
+        log.error("Erro upload: %s", e)
+        raise HTTPException(500, f"Erro ao enviar arquivo: {e}")
 
     db = SessionLocal()
-
-    total = db.query(func.count(Documento.id)).scalar()
-
-    categorias = dict(
-        db.query(Documento.categoria, func.count(Documento.id))
-        .group_by(Documento.categoria)
-        .all()
-    )
-
-    recentes = (
-        db.query(Documento.nome, Documento.data)
-        .order_by(Documento.data.desc())
-        .limit(5)
-        .all()
-    )
-
-    return {
-        "total": total,
-        "categorias": categorias,
-        "recentes": [
-            {"nome": r.nome, "data": str(r.data)} for r in recentes
-        ]
-    }
-
-# ====================== CRIAR PASTA (corrigida) ======================
-@app.post("/criar_pasta")
-async def criar_pasta(data: dict = Body(...)):
     try:
-        tipo = data.get("tipo")
-        caminho = data.get("caminho", "")
-        nome = data.get("nome")
+        db.add(Documento(
+            nome=file.filename,
+            categoria=categoria,
+            caminho=pasta,
+            usuario=user["username"],
+            data=str(datetime.now()),
+        ))
+        db.commit()
+    finally:
+        db.close()
 
-        if not tipo or not nome:
-            return {"erro": "Tipo e nome da pasta são obrigatórios"}
+    return RedirectResponse(url="/", status_code=303)
 
-        if caminho:
-            path = f"{tipo}/{caminho}/{nome}/.keep"
-        else:
-            path = f"{tipo}/{nome}/.keep"
 
-        print(f"[CRIAR PASTA] Tentando criar: {path}")
-
-        # Versão simplificada e mais estável
-        response = supabase.storage.from_("documentos").upload(
-            path=path,
-            file=b"",                           # arquivo vazio
-            file_options={"content-type": "text/plain"}
-        )
-
-        print(f"[CRIAR PASTA] Sucesso! Resposta: {response}")
-        return {"ok": True, "mensagem": "Pasta criada com sucesso"}
-
-    except Exception as e:
-        error_msg = str(e)
-        print(f"[CRIAR PASTA] ERRO DETALHADO: {error_msg}")
-        return {"erro": error_msg}
-# ====================== EXPLORAR ======================
+# ─────────────────────────────────────────────
+# EXPLORAR pastas
+# ─────────────────────────────────────────────
 @app.get("/explorar")
-def explorar(tipo: str, caminho: str = ""):
+def explorar(request: Request, tipo: str, caminho: str = ""):
+    current_user(request)
     prefix = f"{tipo}/{caminho}" if caminho else tipo
-    response = supabase.storage.from_("documentos").list(prefix)
 
-    pastas = set()
+    try:
+        response = supabase.storage.from_("documentos").list(prefix)
+    except Exception as e:
+        log.error("Erro ao explorar %s: %s", prefix, e)
+        raise HTTPException(500, "Erro ao listar pasta")
+
+    pastas   = []
     arquivos = []
 
     for item in response:
         nome = item["name"]
-        if nome == ".keep":
+        if nome in (".keep", ".emptyFolderPlaceholder"):
             continue
-        if item.get("id") is None:   # é pasta
-            pastas.add(nome)
+        if item.get("id") is None:
+            pastas.append(nome)
         else:
             arquivos.append(nome)
 
-    return {
-        "pastas": list(pastas),
-        "arquivos": arquivos,
-        "caminho": caminho
-    }
+    return {"pastas": pastas, "arquivos": arquivos, "caminho": caminho}
 
-# ====================== DELETE ======================
+
+# ─────────────────────────────────────────────
+# CRIAR PASTA
+# ─────────────────────────────────────────────
+@app.post("/criar_pasta")
+async def criar_pasta(request: Request, data: dict = Body(...)):
+    current_user(request)
+    tipo   = data.get("tipo")
+    caminho = data.get("caminho", "")
+    nome   = data.get("nome", "").strip()
+
+    if not tipo or not nome:
+        raise HTTPException(400, "Tipo e nome da pasta são obrigatórios")
+
+    path = build_storage_path(tipo, caminho, f"{nome}/.keep")
+
+    try:
+        supabase.storage.from_("documentos").upload(
+            path=path,
+            file=b"",
+            file_options={"content-type": "text/plain"},
+        )
+        log.info("Pasta criada: %s", path)
+        return {"ok": True, "mensagem": f"Pasta '{nome}' criada com sucesso"}
+    except Exception as e:
+        log.error("Erro ao criar pasta %s: %s", path, e)
+        raise HTTPException(500, f"Erro ao criar pasta: {e}")
+
+
+# ─────────────────────────────────────────────
+# DELETE arquivo
+# ─────────────────────────────────────────────
 @app.delete("/delete")
-def delete_file(tipo: str, caminho: str = "", nome: str = Query(...)):
+def delete_file(
+    request: Request,
+    tipo:    str = Query(...),
+    caminho: str = Query(""),
+    nome:    str = Query(...),
+):
+    user = current_user(request)
+
+    nome    = nome.replace("📄", "").strip()
+    caminho = caminho.strip("/")
+    path    = build_storage_path(tipo, caminho, nome)
+
+    import requests as req_lib
+    url = f"{SUPABASE_URL}/storage/v1/object/documentos/{path}"
+    headers = {
+        "apikey":        SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+    }
+    resp = req_lib.delete(url, headers=headers)
+
+    if resp.status_code not in (200, 204):
+        log.error("Erro ao deletar no Supabase: %s %s", resp.status_code, resp.text)
+        raise HTTPException(500, f"Erro ao deletar arquivo no storage: {resp.text}")
+
+    db = SessionLocal()
     try:
-        print("🔥 DELETE RECEBIDO:", tipo, caminho, nome)
-
-        # 🔥 REMOVE EMOJI E ESPAÇOS
-        nome = nome.replace("📄", "").strip()
-
-        # 🔥 NORMALIZA CAMINHO
-        caminho = caminho.strip("/") if caminho else ""
-
-        prefix = f"{tipo}/{caminho}".strip("/")
-
-        print("📂 LISTANDO EM:", prefix)
-
-        # 🔥 LISTA ARQUIVOS REAIS
-        arquivos = supabase.storage.from_("documentos").list(prefix)
-        print("📂 CONTEÚDO REAL:", arquivos)
-
-        for arq in arquivos:
-            if arq.get("name") == nome:
-
-                path_real = f"{prefix}/{nome}"
-                path_real = path_real.replace("//", "/")
-
-                print("🔥 DELETANDO REAL:", path_real)
-
-                # 🔥 DELETE VIA API (FUNCIONA DE VERDADE)
-                import requests
-
-                url = f"{SUPABASE_URL}/storage/v1/object/documentos/{path_real}"
-
-                headers = {
-                    "apikey": SUPABASE_KEY,
-                    "Authorization": f"Bearer {SUPABASE_KEY}"
-                }
-
-                res = requests.delete(url, headers=headers)
-
-                print("🔥 STATUS DELETE:", res.status_code)
-                print("🔥 RESPONSE:", res.text)
-
-                # 🔥 REMOVE DO BANCO
-                db = SessionLocal()
-                db.query(Documento).filter(
-                    Documento.nome == nome,
-                    Documento.categoria == tipo,
-                    Documento.caminho == (caminho or "")
-                ).delete()
-                db.commit()
-                db.close()
-
-                return {"ok": True}
-
-        return {"erro": "Arquivo não encontrado no storage"}
-
-    except Exception as e:
-        print("❌ ERRO DELETE:", str(e))
-        return {"erro": str(e)}
-
-@app.get("/fix-db")
-def fix_db():
-    from sqlalchemy import text
-
-    try:
-        db = SessionLocal()
-        db.execute(text("ALTER TABLE documentos ADD COLUMN caminho TEXT;"))
+        db.query(Documento).filter(
+            Documento.nome      == nome,
+            Documento.categoria == tipo,
+            Documento.caminho   == (caminho or ""),
+        ).delete()
         db.commit()
+    finally:
         db.close()
-        return {"ok": True, "msg": "Coluna criada!"}
+
+    log.info("Arquivo deletado por %s: %s", user["username"], path)
+    return {"ok": True}
+
+
+# ─────────────────────────────────────────────
+# URL ASSINADA (seguro — não expõe chave no front)
+# ─────────────────────────────────────────────
+@app.get("/signed-url")
+def signed_url(
+    request: Request,
+    tipo:    str = Query(...),
+    caminho: str = Query(""),
+    nome:    str = Query(...),
+):
+    current_user(request)
+    path = build_storage_path(tipo, caminho, nome)
+    try:
+        result = supabase.storage.from_("documentos").create_signed_url(path, 3600)
+        return {"url": result["signedURL"]}
     except Exception as e:
-        return {"erro": str(e)}
+        log.error("Erro ao gerar signed URL para %s: %s", path, e)
+        raise HTTPException(500, "Erro ao gerar link de acesso")
