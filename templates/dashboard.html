@@ -35,7 +35,7 @@ a{color:inherit;text-decoration:none;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none;}
 input,select,textarea{font-family:inherit;outline:none;color:var(--text);}
 ::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.06);}
 ::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:99px;}
 
 /* SIDEBAR */
@@ -68,7 +68,7 @@ input,select,textarea{font-family:inherit;outline:none;color:var(--text);}
 }
 .logo-mark{
   width:48px;height:48px;flex-shrink:0;
-  background:transparent;
+  background:rgba(255,255,255,.06);
   border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:17px;
@@ -328,7 +328,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 @keyframes chipIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 .tag-chip-rm{background:none;border:none;cursor:pointer;color:var(--accent-text);font-size:13px;line-height:1;padding:0 1px;opacity:.6;}
 .tag-chip-rm:hover{opacity:1;}
-.tag-input{border:none;outline:none;background:transparent;font-size:13px;color:var(--text);min-width:80px;flex:1;}
+.tag-input{border:none;outline:none;background:rgba(255,255,255,.06);font-size:13px;color:var(--text);min-width:80px;flex:1;}
 .tag-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--shadow-md);z-index:999;overflow:hidden;display:none;}
 .tag-suggestions.open{display:block;animation:secIn .12s var(--ease);}
 .tag-sug-item{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--text-2);transition:background var(--t);}
@@ -617,7 +617,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
   <!-- Logo -->
   <div class="sidebar-logo">
     <div class="logo-mark">
-      <img src="/static/logo.png" alt="Kronos" style="width:44px;height:44px;object-fit:contain;">
+      <img src="/static/logo.png" alt="Kronos" style="width:36px;height:36px;object-fit:contain;">
     </div>
     <div class="logo-text-wrap">
       <span class="logo-brand">Kronos Systems</span>
@@ -749,7 +749,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
           <!-- toggle view -->
           <div style="display:flex;gap:4px;border:1px solid var(--border);border-radius:var(--r-sm);padding:3px;background:var(--surface-2);">
             <button id="viewList" onclick="setDocView('list')" title="Lista" class="btn btn-sm" style="padding:4px 8px;font-size:13px;background:var(--accent);color:#fff;border-radius:4px;">☰</button>
-            <button id="viewGrid" onclick="setDocView('grid')" title="Grid" class="btn btn-sm" style="padding:4px 8px;font-size:13px;background:transparent;color:var(--text-3);border-radius:4px;">⊞</button>
+            <button id="viewGrid" onclick="setDocView('grid')" title="Grid" class="btn btn-sm" style="padding:4px 8px;font-size:13px;background:rgba(255,255,255,.06);color:var(--text-3);border-radius:4px;">⊞</button>
           </div>
         </div>
       </div>
