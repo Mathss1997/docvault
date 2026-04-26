@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocVault — Gestão de Documentos</title>
+<title>DocVault — Kronos Systems</title>
+<link rel="icon" type="image/png" href="/static/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -66,14 +67,16 @@ input,select,textarea{font-family:inherit;outline:none;color:var(--text);}
   position:relative;
 }
 .logo-mark{
-  width:36px;height:36px;flex-shrink:0;
-  background:linear-gradient(135deg,#6366F1,#8B5CF6);
+  width:40px;height:40px;flex-shrink:0;
+  background:linear-gradient(135deg,#0A0E1F,#111533);
   border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:17px;
-  box-shadow:0 4px 16px rgba(99,102,241,.45), 0 0 0 1px rgba(139,92,246,.3);
+  box-shadow:0 4px 16px rgba(99,102,241,.35), 0 0 0 1px rgba(139,92,246,.25);
   position:relative;
   transition:box-shadow var(--t);
+  padding:4px;
+  overflow:hidden;
 }
 .logo-mark::after{
   content:"";position:absolute;inset:0;border-radius:10px;
@@ -83,10 +86,18 @@ input,select,textarea{font-family:inherit;outline:none;color:var(--text);}
 .sidebar-logo:hover .logo-mark{
   box-shadow:0 6px 22px rgba(99,102,241,.6), 0 0 0 1px rgba(139,92,246,.5);
 }
-.logo-name{
-  font-family:"Syne",sans-serif;font-weight:700;font-size:16px;
-  letter-spacing:-.2px;color:#F0EEF8;
+.logo-text-wrap{
+  display:flex;flex-direction:column;line-height:1.15;
+}
+.logo-brand{
+  font-family:"Syne",sans-serif;font-weight:700;font-size:12.5px;
+  letter-spacing:.3px;text-transform:uppercase;
+  color:rgba(139,92,246,.85);
   text-shadow:0 1px 8px rgba(99,102,241,.3);
+}
+.logo-product{
+  font-family:"Syne",sans-serif;font-weight:700;font-size:15px;
+  letter-spacing:-.2px;color:#F0EEF8;
 }
 .logo-ver{
   margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:.8px;
@@ -605,8 +616,13 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 
   <!-- Logo -->
   <div class="sidebar-logo">
-    <div class="logo-mark">🔐</div>
-    <span class="logo-name">DocVault</span>
+    <div class="logo-mark">
+      <img src="/static/logo.png" alt="Kronos" style="width:24px;height:24px;object-fit:contain;border-radius:3px;">
+    </div>
+    <div class="logo-text-wrap">
+      <span class="logo-brand">Kronos Systems</span>
+      <span class="logo-product">DocVault</span>
+    </div>
     <span class="logo-ver">Pro</span>
   </div>
 
