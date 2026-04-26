@@ -919,6 +919,15 @@ function renderRecent(recentes){
 /* DOC TABLE */
 
 async function openFile(tipo,caminho,nome,docId){
+  // Se nao tiver ID, busca no banco pelo nome+categoria+caminho
+  if(!docId){
+    try{
+      const files = await fetch("/files").then(r=>r.json());
+      const cat = files[tipo]||[];
+      const found = cat.find(f=>f.nome===nome && (f.caminho||"")===(caminho||""));
+      if(found?.id) docId = found.id;
+    }catch(e){}
+  }
   S.pdf={task:null,doc:null,tipo,caminho,nome,docId};
   const modal=document.getElementById("pdfModal");
   modal.classList.add("open");
@@ -1009,6 +1018,15 @@ async function saveIndexador(){
 
 /* MODAL INDEXADOR STANDALONE */
 async function openSidxModal(docId,tipo,caminho,nome){
+  // Busca ID no banco se nao tiver
+  if(!docId){
+    try{
+      const files = await fetch("/files").then(r=>r.json());
+      const cat = files[tipo]||[];
+      const found = cat.find(f=>f.nome===nome && (f.caminho||"")===(caminho||""));
+      if(found?.id) docId = found.id;
+    }catch(e){}
+  }
   S.sidx={docId,tipo,caminho,nome};
   document.getElementById("sidxTitle").textContent=docId?"Editar indexador":"Indexar documento";
   document.getElementById("sidxFn").textContent=nome;
