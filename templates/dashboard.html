@@ -1051,7 +1051,7 @@ async function saveSidxModal(){
     if(json.ok){
       toast("success","Indexador salvo!");
       closeSidxModal();updateIdxBadge();
-      await loadFiles();renderDocTable();runSearch();
+      await loadFiles();renderDocList();runSearch();
     }else toast("error","Erro ao salvar",json.erro||"");
   }catch(e){toast("error","Erro de conexão");}
 }
@@ -1219,7 +1219,7 @@ async function deleteFile(tipo,caminho,nome,btn){
     if(!d.ok)throw new Error(d.erro||"Erro desconhecido");
     toast("success","Arquivo excluído",nome);
     await loadFiles();
-    renderDocTable();
+    renderDocList();
     loadDashboard();
     loadExp(tipo,caminho);
   }catch(e){toast("error","Erro ao excluir",e.message);if(btn)btn.disabled=false;}
