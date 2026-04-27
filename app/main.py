@@ -351,11 +351,14 @@ def list_files(request: Request):
                 existe = False
             if existe:
                 resultado.setdefault(doc.categoria, []).append({
-                    "id":      doc.id,
-                    "nome":    doc.nome,
-                    "usuario": doc.usuario,
-                    "data":    doc.data,
-                    "caminho": doc.caminho or "",
+                    "id":           doc.id,
+                    "nome":         doc.nome,
+                    "usuario":      doc.usuario,
+                    "data":         doc.data,
+                    "caminho":      doc.caminho or "",
+                    "assinado":     doc.assinado == "sim" if hasattr(doc, "assinado") else False,
+                    "assinado_por": doc.assinado_por if hasattr(doc, "assinado_por") else None,
+                    "assinado_em":  doc.assinado_em if hasattr(doc, "assinado_em") else None,
                 })
             else:
                 log.warning("Fantasma removido: %s", doc.nome)
@@ -540,3 +543,167 @@ def signed_url(
         return {"url": result["signedURL"]}
     except Exception as e:
         raise HTTPException(500, f"Erro ao gerar link: {e}")
+
+
+# ─────────────────────────────────────────────
+# ASSINATURA DIGITAL ICP-BRASIL
+# ─────────────────────────────────────────────
+@app.post("/assinar")
+async def assinar_documento(
+    request: Request,
+    tipo:        str        = Form(...),
+    caminho:     str        = Form(""),
+    nome:        str        = Form(...),
+    certificado: UploadFile = File(...),
+    senha_cert:  str        = Form(...),
+):
+    """
+    Assina digitalmente um PDF com certificado ICP-Brasil (A1 — .pfx/.p12).
+    Fluxo:
+      1. Baixa o PDF do Supabase
+      2. Assina com pyHanko usando o certificado fornecido
+      3. Faz upload do PDF assinado de volta ao Supabase
+      4. Atualiza o registro no banco
+    """
+    user = current_user(request)
+    import tempfile
+    from pathlib import Path
+
+    # Validações
+    cert_ext = (certificado.filename or "").lower().split(".")[-1]
+    if cert_ext not in ("pfx", "p12"):
+        raise HTTPException(400, "Certificado deve ser .pfx ou .p12")
+
+    if not nome.lower().endswith(".pdf"):
+        raise HTTPException(400, "Apenas PDFs podem ser assinados")
+
+    # 1. Baixa o PDF do Supabase
+    path_supabase = build_storage_path(tipo, caminho, nome)
+    try:
+        pdf_bytes = supabase.storage.from_("documentos").download(path_supabase)
+    except Exception as e:
+        raise HTTPException(500, f"Erro ao baixar PDF: {e}")
+
+    # 2. Lê o certificado
+    cert_bytes = await certificado.read()
+
+    # 3. Assina o PDF
+    try:
+        from pyhanko.sign import signers, fields as sign_fields
+        from pyhanko.sign.general import load_cert_for_signing
+        from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+        from cryptography.hazmat.primitives.serialization import pkcs12
+        from cryptography.hazmat.backends import default_backend
+        import io
+
+        # Carrega o certificado .pfx
+        private_key, certificate, additional_certs = pkcs12.load_key_and_certificates(
+            cert_bytes, senha_cert.encode("utf-8"), default_backend()
+        )
+
+        if not private_key or not certificate:
+            raise HTTPException(400, "Certificado inv\u00e1lido ou senha incorreta")
+
+        # Prepara o assinante
+        signer = signers.SimpleSigner(
+            signing_cert=certificate,
+            signing_key=private_key,
+            cert_registry=None,
+            ca_chain=list(additional_certs) if additional_certs else [],
+        )
+
+        # Assina o PDF
+        pdf_in = io.BytesIO(pdf_bytes)
+        writer = IncrementalPdfFileWriter(pdf_in)
+
+        sig_meta = signers.PdfSignatureMetadata(
+            field_name="Assinatura_DocVault",
+            reason=f"Documento assinado por {user['username']} via DocVault",
+            name=user["username"],
+            location="DocVault - Kronos Systems",
+        )
+
+        pdf_out = io.BytesIO()
+        signers.sign_pdf(
+            writer,
+            signature_meta=sig_meta,
+            signer=signer,
+            output=pdf_out,
+        )
+        pdf_signed = pdf_out.getvalue()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("Erro ao assinar PDF: %s", e, exc_info=True)
+        err_msg = str(e)
+        if "password" in err_msg.lower() or "mac" in err_msg.lower():
+            raise HTTPException(400, "Senha do certificado incorreta")
+        raise HTTPException(500, f"Erro ao assinar: {e}")
+
+    # 4. Faz upload do PDF assinado de volta
+    try:
+        supabase.storage.from_("documentos").update(
+            path=path_supabase,
+            file=pdf_signed,
+            file_options={"content-type": "application/pdf"},
+        )
+    except Exception:
+        # Se update falhar, tenta remove + upload
+        try:
+            supabase.storage.from_("documentos").remove([path_supabase])
+            supabase.storage.from_("documentos").upload(
+                path=path_supabase,
+                file=pdf_signed,
+                file_options={"content-type": "application/pdf"},
+            )
+        except Exception as e:
+            raise HTTPException(500, f"Erro ao salvar PDF assinado: {e}")
+
+    # 5. Atualiza registro no banco (marca como assinado)
+    db = SessionLocal()
+    try:
+        doc = db.query(Documento).filter(
+            Documento.nome == nome,
+            Documento.categoria == tipo,
+            Documento.caminho == caminho,
+        ).first()
+        if doc:
+            doc.assinado = "sim"
+            doc.assinado_por = user["username"]
+            doc.assinado_em = datetime.now().isoformat()
+            db.commit()
+    finally:
+        db.close()
+
+    registrar_log(
+        user["username"], "INDEXAR",
+        detalhe=f"Assinatura digital: {nome}",
+        contexto=f"{tipo}/{caminho}" if caminho else tipo,
+        ip=get_ip(request),
+    )
+
+    log.info("PDF assinado: %s por %s", nome, user["username"])
+    return {"ok": True, "mensagem": f"Documento assinado por {user['username']}"}
+
+
+@app.get("/verificar-assinatura")
+def verificar_assinatura(request: Request, tipo: str, caminho: str = "", nome: str = ""):
+    """Verifica se um documento está assinado digitalmente."""
+    current_user(request)
+    db = SessionLocal()
+    try:
+        doc = db.query(Documento).filter(
+            Documento.nome == nome,
+            Documento.categoria == tipo,
+            Documento.caminho == caminho,
+        ).first()
+        if doc and doc.assinado == "sim":
+            return {
+                "assinado": True,
+                "por": doc.assinado_por or "—",
+                "em": doc.assinado_em or "—",
+            }
+        return {"assinado": False}
+    finally:
+        db.close()

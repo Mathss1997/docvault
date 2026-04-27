@@ -587,6 +587,11 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 .stat-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .stat-chip-count{font-weight:700;}
 
+/* SIGN BUTTON */
+.m-btn-sign{background:#0F2D1A;color:#4ADE80;}
+.m-btn-sign:hover{background:#15803D;color:#fff;}
+.sign-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--green-soft);color:var(--green);white-space:nowrap;}
+
 /* SCANNER BUTTON */
 .btn-scanner{background:linear-gradient(135deg,#0D9488,#0891B2);color:#fff;border:none;transition:all var(--t);}
 .btn-scanner:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 12px rgba(13,148,136,.35);}
@@ -985,6 +990,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
     <div class="modal-top">
       <span class="modal-fn" id="modalFn">—</span>
       <div class="modal-acts">
+        <button class="m-btn m-btn-sign" id="btnSign" onclick="abrirModalAssinatura()" title="Assinar digitalmente">✍ Assinar</button>
         <button class="m-btn m-btn-idx" id="btnToggleIdx" onclick="toggleIdxPanel()">⊛ Indexar</button>
         <button class="m-btn m-btn-ghost" id="btnDownload">⬇ Baixar</button>
         <button class="m-btn m-btn-close" onclick="closeModal()">✕</button>
@@ -1120,7 +1126,63 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 }
 </style>
 
-<!-- TOASTS -->
+<!-- MODAL ASSINATURA DIGITAL -->
+    <div class="sidx-ov" id="signModal">
+      <div class="sidx-box" style="max-width:460px;">
+        <div class="sidx-hd">
+          <div>
+            <div class="sidx-title">✍ Assinatura Digital</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:2px;" id="signFileName">—</div>
+          </div>
+          <button class="icon-btn" onclick="fecharModalAssinatura()">✕</button>
+        </div>
+        <div class="sidx-body" style="gap:14px;">
+
+          <!-- Info -->
+          <div style="background:var(--green-soft);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;">
+            <div style="font-size:11.5px;font-weight:600;color:var(--green);margin-bottom:4px;">🔒 Certificado ICP-Brasil</div>
+            <div style="font-size:12.5px;color:var(--text-2);line-height:1.5;">O documento será assinado digitalmente com seu certificado A1 (.pfx/.p12). A assinatura tem validade jurídica.</div>
+          </div>
+
+          <!-- Upload certificado -->
+          <div class="fgroup">
+            <label class="flabel">Certificado digital (.pfx ou .p12)</label>
+            <div style="position:relative;">
+              <input type="file" class="finput" id="signCert" accept=".pfx,.p12" style="padding:8px;">
+            </div>
+            <span style="font-size:11px;color:var(--text-3);margin-top:3px;">Seu certificado A1 — o arquivo não é armazenado no sistema.</span>
+          </div>
+
+          <!-- Senha do certificado -->
+          <div class="fgroup">
+            <label class="flabel">Senha do certificado</label>
+            <div style="position:relative;">
+              <input type="password" class="finput" id="signSenha" placeholder="Digite a senha do certificado">
+              <button type="button" onclick="toggleSignPw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-3);">👁</button>
+            </div>
+          </div>
+
+          <!-- Progresso -->
+          <div id="signProgress" style="display:none;text-align:center;padding:16px 0;">
+            <div style="font-size:28px;margin-bottom:10px;" id="signProgressIcon">✍</div>
+            <div style="font-size:14px;font-weight:500;" id="signProgressText">Assinando documento…</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:4px;" id="signProgressSub">Aguarde enquanto o certificado é processado.</div>
+            <div style="height:4px;background:var(--border);border-radius:99px;margin-top:14px;overflow:hidden;">
+              <div style="height:100%;background:linear-gradient(90deg,#16A34A,#22C55E);border-radius:99px;width:60%;animation:scanBar 1.5s ease-in-out infinite;"></div>
+            </div>
+          </div>
+
+        </div>
+        <div class="sidx-ft">
+          <button class="btn btn-ghost" onclick="fecharModalAssinatura()">Cancelar</button>
+          <button class="btn" id="btnSubmitSign" onclick="assinarDocumento()" style="background:var(--green);color:#fff;">
+            ✍ Assinar documento
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOASTS -->
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2035,6 +2097,9 @@ function buildDocRow(f){
   const indexed = f.id
     ? `<span class="badge b-teal" style="font-size:10px">✓ Indexado</span>`
     : `<span class="badge b-slate" style="font-size:10px">— Não indexado</span>`;
+  const signed = f.assinado
+    ? `<span class="sign-badge">✍ Assinado por ${f.assinado_por||"—"}</span>`
+    : "";
   const delBtn = S.tipo==="admin"
     ? `<button class="btn btn-rose btn-sm" onclick="event.stopPropagation();deleteFile('${f.categoria}','${f.caminho||""}','${f.nome}',this)" title="Excluir">🗑</button>`
     : "";
@@ -2311,6 +2376,77 @@ function exportLogs(){
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     toast("success","CSV exportado!");
   }).catch(()=>toast("error","Erro ao exportar"));
+}
+
+/* ══ ASSINATURA DIGITAL ══ */
+function abrirModalAssinatura(){
+  if(!S.pdf.nome){toast("warn","Nenhum arquivo aberto");return;}
+  if(!S.pdf.nome.toLowerCase().endsWith(".pdf")){toast("warn","Apenas PDFs podem ser assinados");return;}
+  document.getElementById("signFileName").textContent=S.pdf.nome;
+  document.getElementById("signCert").value="";
+  document.getElementById("signSenha").value="";
+  document.getElementById("signProgress").style.display="none";
+  document.getElementById("btnSubmitSign").disabled=false;
+  document.getElementById("signModal").classList.add("open");
+}
+function fecharModalAssinatura(){document.getElementById("signModal").classList.remove("open");}
+document.getElementById("signModal")?.addEventListener("click",e=>{if(e.target===document.getElementById("signModal"))fecharModalAssinatura();});
+function toggleSignPw(){const i=document.getElementById("signSenha");i.type=i.type==="password"?"text":"password";}
+
+async function assinarDocumento(){
+  const certFile=document.getElementById("signCert").files[0];
+  const senha=document.getElementById("signSenha").value;
+  if(!certFile){toast("warn","Selecione o arquivo do certificado (.pfx/.p12)");return;}
+  if(!senha){toast("warn","Digite a senha do certificado");return;}
+
+  const ext=certFile.name.split(".").pop().toLowerCase();
+  if(!["pfx","p12"].includes(ext)){toast("warn","Arquivo deve ser .pfx ou .p12");return;}
+
+  const btn=document.getElementById("btnSubmitSign");
+  const prog=document.getElementById("signProgress");
+  const pIcon=document.getElementById("signProgressIcon");
+  const pText=document.getElementById("signProgressText");
+  const pSub=document.getElementById("signProgressSub");
+
+  btn.disabled=true;
+  prog.style.display="block";
+  pIcon.textContent="\u270d";
+  pText.textContent="Assinando documento…";
+  pSub.textContent="Processando certificado e aplicando assinatura.";
+
+  const fd=new FormData();
+  fd.append("tipo",S.pdf.tipo);
+  fd.append("caminho",S.pdf.caminho||"");
+  fd.append("nome",S.pdf.nome);
+  fd.append("certificado",certFile);
+  fd.append("senha_cert",senha);
+
+  try{
+    const res=await fetch("/assinar",{method:"POST",body:fd});
+    const data=await res.json();
+
+    if(data.ok){
+      pIcon.textContent="✅";
+      pText.textContent="Documento assinado com sucesso!";
+      pSub.textContent=data.mensagem||"";
+      toast("success","Assinatura digital aplicada!",S.pdf.nome);
+      await loadFiles();
+      renderDocList();
+      setTimeout(fecharModalAssinatura,2000);
+    } else {
+      pIcon.textContent="❌";
+      pText.textContent="Erro na assinatura";
+      pSub.textContent=data.detail||data.erro||"Verifique o certificado e a senha.";
+      toast("error","Erro ao assinar",data.detail||data.erro||"");
+      btn.disabled=false;
+    }
+  }catch(e){
+    pIcon.textContent="❌";
+    pText.textContent="Falha de conexão";
+    pSub.textContent="Erro ao comunicar com o servidor.";
+    toast("error","Erro de conexão");
+    btn.disabled=false;
+  }
 }
 
 init();

@@ -7,12 +7,15 @@ Base = declarative_base()
 class Documento(Base):
     __tablename__ = "documentos"
 
-    id        = Column(Integer, primary_key=True, index=True)
-    nome      = Column(String)
-    categoria = Column(String)
-    caminho   = Column(String)
-    usuario   = Column(String)
-    data      = Column(String)
+    id           = Column(Integer, primary_key=True, index=True)
+    nome         = Column(String)
+    categoria    = Column(String)
+    caminho      = Column(String)
+    usuario      = Column(String)
+    data         = Column(String)
+    assinado     = Column(String, default="")
+    assinado_por = Column(String, default="")
+    assinado_em  = Column(String, default="")
 
     indexador = relationship(
         "Indexador",
