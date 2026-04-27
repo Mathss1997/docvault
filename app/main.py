@@ -200,23 +200,30 @@ def get_user(request: Request):
 # USUÁRIOS
 # ─────────────────────────────────────────────
 @app.post("/usuarios/novo")
-def criar_usuario(
-    request: Request,
-    usuario: str = Form(...),
-    senha:   str = Form(...),
-    tipo:    str = Form("user"),
-):
-    admin = require_admin(request)
+def criar_usuario(request: Request, data: dict = Body(...)):
+    require_admin(request)
+    usuario = data.get("usuario", "").strip()
+    senha   = data.get("senha", "")
+    tipo    = data.get("tipo", "user")
+    if not usuario or not senha:
+        raise HTTPException(400, "Usuário e senha são obrigatórios")
     db = SessionLocal()
     try:
         if db.query(Usuario).filter(Usuario.username == usuario).first():
             raise HTTPException(400, "Usuário já existe")
-        db.add(Usuario(username=usuario, senha=pwd_context.hash(senha), tipo=tipo))
+        db.add(Usuario(
+            username=usuario,
+            senha=pwd_context.hash(senha),
+            tipo=tipo,
+            criado_em=datetime.now().isoformat(),
+        ))
         db.commit()
         log.info("Usuário criado: %s (%s)", usuario, tipo)
+        registrar_log(request.session.get("user","admin"), "LOGIN",
+                      detalhe=f"Criou usuário: {usuario} ({tipo})", ip=get_ip(request))
+        return {"ok": True, "mensagem": f"Usuário '{usuario}' criado com sucesso"}
     finally:
         db.close()
-    return RedirectResponse("/?sucesso=usuario_criado", status_code=303)
 
 
 @app.get("/usuarios")
@@ -225,7 +232,51 @@ def listar_usuarios(request: Request):
     db = SessionLocal()
     try:
         users = db.query(Usuario).all()
-        return [{"id": u.id, "username": u.username, "tipo": u.tipo} for u in users]
+        return [{
+            "id":        u.id,
+            "username":  u.username,
+            "tipo":      u.tipo,
+            "criado_em": u.criado_em or "",
+        } for u in users]
+    finally:
+        db.close()
+
+
+@app.put("/usuarios/{user_id}")
+def editar_usuario(user_id: int, request: Request, data: dict = Body(...)):
+    require_admin(request)
+    db = SessionLocal()
+    try:
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if not user:
+            raise HTTPException(404, "Usuário não encontrado")
+        novo_tipo = data.get("tipo")
+        if novo_tipo and novo_tipo in ("admin", "user", "comum"):
+            user.tipo = novo_tipo
+        db.commit()
+        log.info("Usuário editado: %s → %s", user.username, novo_tipo)
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.put("/usuarios/{user_id}/senha")
+def reset_senha(user_id: int, request: Request, data: dict = Body(...)):
+    require_admin(request)
+    nova_senha = data.get("senha", "")
+    if len(nova_senha) < 4:
+        raise HTTPException(400, "Senha deve ter pelo menos 4 caracteres")
+    db = SessionLocal()
+    try:
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if not user:
+            raise HTTPException(404, "Usuário não encontrado")
+        user.senha = pwd_context.hash(nova_senha)
+        db.commit()
+        log.info("Senha resetada: %s", user.username)
+        registrar_log(request.session.get("user","admin"), "LOGIN",
+                      detalhe=f"Reset senha: {user.username}", ip=get_ip(request))
+        return {"ok": True, "mensagem": f"Senha de '{user.username}' atualizada"}
     finally:
         db.close()
 
@@ -238,8 +289,11 @@ def deletar_usuario(user_id: int, request: Request):
         user = db.query(Usuario).filter(Usuario.id == user_id).first()
         if not user:
             raise HTTPException(404, "Usuário não encontrado")
+        nome = user.username
         db.delete(user)
         db.commit()
+        registrar_log(request.session.get("user","admin"), "DELETE",
+                      detalhe=f"Removeu usuário: {nome}", ip=get_ip(request))
         return {"ok": True}
     finally:
         db.close()
@@ -372,66 +426,6 @@ async def upload_explorer(
 # ─────────────────────────────────────────────
 # EXPLORAR
 # ─────────────────────────────────────────────
-# ─────────────────────────────────────────────────────────────────────────────
-# ADICIONE ESTE TRECHO AO SEU main.py
-# Cole logo após a rota /upload_explorer existente
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.post("/upload_scanner")
-async def upload_scanner(
-    request:  Request,
-    file:     UploadFile = File(...),
-    tipo:     str = Form(...),
-    caminho:  str = Form(""),
-):
-    """
-    Endpoint chamado pelo Scanner Agent local.
-    Recebe o PDF digitalizado e salva no Supabase + banco.
-    Não exige sessão autenticada pois a chamada vem de localhost.
-    """
-    # Segurança: só aceita chamadas de localhost
-    client_ip = get_ip(request)
-    if client_ip not in ("127.0.0.1", "::1", "localhost"):
-        raise HTTPException(403, "Acesso permitido apenas de localhost")
-
-    conteudo = await file.read()
-    validate_file(file.filename, len(conteudo))
-
-    path_supabase = build_storage_path(tipo, caminho, file.filename)
-
-    try:
-        supabase.storage.from_("documentos").upload(
-            path=path_supabase,
-            file=conteudo,
-            file_options={"content-type": "application/pdf"},
-        )
-    except Exception as e:
-        log.error("Erro upload scanner %s: %s", path_supabase, e)
-        raise HTTPException(500, f"Erro ao enviar arquivo: {e}")
-
-    db = SessionLocal()
-    try:
-        db.add(Documento(
-            nome=file.filename,
-            categoria=tipo,
-            caminho=caminho,
-            usuario="scanner",          # identifica origem como scanner
-            data=str(datetime.now()),
-        ))
-        db.commit()
-    finally:
-        db.close()
-
-    registrar_log(
-        "scanner", "UPLOAD",
-        detalhe=file.filename,
-        contexto=f"{tipo}/{caminho}" if caminho else tipo,
-        ip=client_ip,
-    )
-
-    log.info("Scanner upload: %s → %s", file.filename, path_supabase)
-    return {"ok": True, "mensagem": f"Arquivo '{file.filename}' salvo com sucesso."}
-
 @app.get("/explorar")
 def explorar(request: Request, tipo: str, caminho: str = ""):
     current_user(request)

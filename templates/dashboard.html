@@ -911,34 +911,75 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 
         <!-- USUÁRIOS -->
     <div id="sec-users" class="sec">
-      <div style="display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start;" id="usersGrid">
-        <div class="panel">
-          <div class="panel-hd"><span class="panel-title">Novo usuário</span></div>
-          <div class="panel-bd">
-            <form id="userForm" onsubmit="createUser(event)">
-              <div class="fgroup" style="margin-bottom:11px;"><label class="flabel">Usuário</label><input type="text" name="usuario" class="finput" required></div>
-              <div class="fgroup" style="margin-bottom:11px;"><label class="flabel">Senha</label><input type="password" name="senha" class="finput" required></div>
-              <div class="fgroup" style="margin-bottom:14px;"><label class="flabel">Perfil</label>
-                <select name="tipo" class="finput"><option value="user">Usuário comum</option><option value="admin">Administrador</option></select>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width:100%;">Cadastrar</button>
-            </form>
-          </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div>
+          <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px;">Usuários</h2>
+          <p style="font-size:13px;color:var(--text-3);margin-top:2px;" id="usersSubtitle">Gerencie os acessos ao sistema</p>
         </div>
-        <div class="panel">
-          <div class="panel-hd"><span class="panel-title">Usuários cadastrados</span></div>
-          <div style="overflow-x:auto;">
-            <table class="tbl"><thead><tr><th>Usuário</th><th>Perfil</th><th>Ações</th></tr></thead>
-            <tbody id="usersTbody"><tr><td colspan="3"><div class="pdf-load" style="padding:24px"><div class="spin"></div></div></td></tr></tbody></table>
-          </div>
+        <button class="btn btn-primary" onclick="openUserModal()">+ Novo usuário</button>
+      </div>
+      <div class="stat-grid" style="margin-bottom:18px;" id="usersStatGrid"></div>
+      <div class="panel">
+        <div class="panel-hd">
+          <span class="panel-title">Usuários cadastrados</span>
+          <span class="badge b-blue" id="usersCount">—</span>
+        </div>
+        <div id="usersListBody">
+          <div class="pdf-load" style="padding:40px"><div class="spin spin-lg"></div></div>
         </div>
       </div>
     </div>
 
-  </div>
-</div>
+    <!-- Modal Novo/Editar Usuário -->
+    <div class="sidx-ov" id="userModal">
+      <div class="sidx-box" style="max-width:420px;">
+        <div class="sidx-hd">
+          <div class="sidx-title" id="userModalTitle">Novo usuário</div>
+          <button class="icon-btn" onclick="closeUserModal()">✕</button>
+        </div>
+        <div class="sidx-body" style="gap:14px;">
+          <div class="fgroup"><label class="flabel">Nome de usuário</label>
+            <input type="text" class="finput" id="umUsuario" placeholder="ex: joao.silva"></div>
+          <div class="fgroup"><label class="flabel">Senha</label>
+            <div style="position:relative;">
+              <input type="password" class="finput" id="umSenha" placeholder="Mínimo 4 caracteres">
+              <button type="button" onclick="toggleUmPw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-3);">👁</button>
+            </div></div>
+          <div class="fgroup"><label class="flabel">Perfil de acesso</label>
+            <select class="finput" id="umTipo"><option value="user">Usuário comum</option><option value="admin">Administrador</option></select></div>
+        </div>
+        <div class="sidx-ft">
+          <button class="btn btn-ghost" onclick="closeUserModal()">Cancelar</button>
+          <button class="btn btn-primary" id="umSubmit" onclick="submitUserModal()">Cadastrar</button>
+        </div>
+      </div>
+    </div>
 
-<!-- MODAL PDF + PAINEL INDEXADOR -->
+    <!-- Modal Reset Senha -->
+    <div class="sidx-ov" id="resetPwModal">
+      <div class="sidx-box" style="max-width:380px;">
+        <div class="sidx-hd">
+          <div><div class="sidx-title">Redefinir senha</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:2px;" id="resetPwUser">—</div></div>
+          <button class="icon-btn" onclick="closeResetPwModal()">✕</button>
+        </div>
+        <div class="sidx-body" style="gap:14px;">
+          <div class="fgroup"><label class="flabel">Nova senha</label>
+            <div style="position:relative;">
+              <input type="password" class="finput" id="rpSenha" placeholder="Mínimo 4 caracteres">
+              <button type="button" onclick="toggleRpPw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-3);">👁</button>
+            </div></div>
+          <div class="fgroup"><label class="flabel">Confirmar nova senha</label>
+            <input type="password" class="finput" id="rpConfirm" placeholder="Repita a senha"></div>
+        </div>
+        <div class="sidx-ft">
+          <button class="btn btn-ghost" onclick="closeResetPwModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="submitResetPw()">Salvar nova senha</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL PDF + PAINEL INDEXADOR -->
 <div class="modal-ov" id="pdfModal">
   <div class="modal-box">
     <div class="modal-top">
@@ -1134,7 +1175,7 @@ async function init(){
   document.getElementById("userName").textContent=u.usuario||"—";
   document.getElementById("userRole").textContent=u.tipo==="admin"?"Administrador":"Usuário";
   document.getElementById("userAv").textContent=(u.usuario||"?")[0].toUpperCase();
-  if(u.tipo==="admin"){document.getElementById("nav-users").style.display="flex";document.getElementById("nav-logs").style.display="flex";document.getElementById("ctxDel").style.display="flex";updateLogsBadge();}
+  if(u.tipo==="admin"){document.getElementById("nav-users").style.display="flex";document.getElementById("ctxDel").style.display="flex";}
   else document.getElementById("ctxDel").style.display="none";
   await loadFiles();
   loadDashboard();
@@ -1609,22 +1650,129 @@ function ctxDelete(){if(S.ctx?.type==="file")deleteFile(S.exp.tipo,S.exp.caminho
 /* USUÁRIOS */
 async function loadUsers(){
   if(S.tipo!=="admin")return;
-  const r=await fetch("/usuarios").then(r=>r.json());
-  document.getElementById("usersTbody").innerHTML=r.map(u=>`
-    <tr><td>${u.username}</td><td><span class="badge ${u.tipo==="admin"?"b-blue":"b-green"}">${u.tipo}</span></td>
-    <td><button class="btn btn-rose btn-sm" onclick="deleteUser(${u.id},'${u.username}',this)">Remover</button></td></tr>
-  `).join("")||`<tr><td colspan="3"><div class="empty" style="padding:20px">Nenhum usuário</div></td></tr>`;
+  try{
+    const users=await fetch("/usuarios").then(r=>r.json());
+    const body=document.getElementById("usersListBody");
+    const admins=users.filter(u=>u.tipo==="admin").length;
+    const comuns=users.length-admins;
+    const UC=["#6366F1","#0D9488","#D97706","#BE123C","#15803D","#8B5CF6","#0284C7","#C2410C"];
+
+    document.getElementById("usersStatGrid").innerHTML=`
+      <div class="stat-card"><div class="stat-ico ico-blue" style="font-size:18px;">👥</div>
+        <div><div class="stat-num">${users.length}</div><div class="stat-lbl">Total</div></div></div>
+      <div class="stat-card"><div class="stat-ico ico-violet" style="font-size:18px;">🛡</div>
+        <div><div class="stat-num">${admins}</div><div class="stat-lbl">Administradores</div></div></div>
+      <div class="stat-card"><div class="stat-ico ico-teal" style="font-size:18px;">👤</div>
+        <div><div class="stat-num">${comuns}</div><div class="stat-lbl">Usuários comuns</div></div></div>`;
+
+    document.getElementById("usersCount").textContent=`${users.length} usuário${users.length!==1?"s":""}`;
+    document.getElementById("usersSubtitle").textContent=`${users.length} usuário${users.length!==1?"s":""} cadastrado${users.length!==1?"s":""}`;
+
+    if(!users.length){
+      body.innerHTML=`<div class="empty" style="padding:48px"><div class="empty-ico">👥</div><h4>Nenhum usuário</h4><p>Cadastre o primeiro.</p></div>`;
+      return;
+    }
+
+    body.innerHTML=users.map((u,i)=>{
+      const color=UC[i%UC.length];
+      const inicial=(u.username||"?")[0].toUpperCase();
+      const isAdmin=u.tipo==="admin";
+      const date=u.criado_em?new Date(u.criado_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric"}):"—";
+      return`
+        <div class="doc-row" style="cursor:default;">
+          <div style="width:38px;height:38px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px ${color}44;">${inicial}</div>
+          <div class="doc-info" style="flex:1;">
+            <div class="doc-name" style="font-size:14px;">${u.username}</div>
+            <div class="doc-meta">
+              <span class="badge ${isAdmin?"b-violet":"b-teal"}" style="font-size:10px;">${isAdmin?"🛡 Administrador":"👤 Usuário comum"}</span>
+              <span class="doc-meta-dot">·</span>
+              <span class="doc-meta-item">Criado em ${date}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="btn btn-ghost btn-sm" onclick="openEditUser(${u.id},'${u.username}','${u.tipo}')" title="Editar perfil">✏️</button>
+            <button class="btn btn-amber btn-sm" onclick="openResetPw(${u.id},'${u.username}')" title="Redefinir senha">🔑</button>
+            <button class="btn btn-rose btn-sm" onclick="deleteUser(${u.id},'${u.username}')" title="Remover">🗑</button>
+          </div>
+        </div>`;
+    }).join("");
+  }catch(e){toast("error","Erro ao carregar usuários");}
 }
-async function createUser(e){
-  e.preventDefault();const fd=new FormData(document.getElementById("userForm"));
-  try{await fetch("/usuarios/novo",{method:"POST",body:fd});toast("success","Usuário criado");document.getElementById("userForm").reset();loadUsers();}
-  catch(e){toast("error","Erro ao criar usuário");}
+
+let editingUserId=null;
+function openUserModal(editId,username,tipo){
+  editingUserId=editId||null;
+  document.getElementById("userModalTitle").textContent=editId?"Editar usuário":"Novo usuário";
+  document.getElementById("umUsuario").value=username||"";
+  document.getElementById("umUsuario").disabled=!!editId;
+  document.getElementById("umSenha").value="";
+  document.getElementById("umSenha").placeholder=editId?"(não alterar)":"Mínimo 4 caracteres";
+  document.getElementById("umTipo").value=tipo||"user";
+  document.getElementById("umSubmit").textContent=editId?"Salvar alterações":"Cadastrar";
+  document.getElementById("userModal").classList.add("open");
 }
-async function deleteUser(id,nome,btn){
-  if(!confirm(`Remover "${nome}"?`))return;btn.disabled=true;
-  const d=await fetch(`/usuarios/${id}`,{method:"DELETE"}).then(r=>r.json());
-  if(d.ok){toast("success","Usuário removido");loadUsers();}else{toast("error","Erro",d.erro);btn.disabled=false;}
+function closeUserModal(){document.getElementById("userModal").classList.remove("open");editingUserId=null;}
+document.getElementById("userModal")?.addEventListener("click",e=>{if(e.target===document.getElementById("userModal"))closeUserModal();});
+function openEditUser(id,username,tipo){openUserModal(id,username,tipo);}
+
+async function submitUserModal(){
+  const usuario=document.getElementById("umUsuario").value.trim();
+  const senha=document.getElementById("umSenha").value;
+  const tipo=document.getElementById("umTipo").value;
+  if(editingUserId){
+    try{
+      const r=await fetch(`/usuarios/${editingUserId}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({tipo})});
+      const d=await r.json();
+      if(d.ok){toast("success","Perfil atualizado");closeUserModal();loadUsers();}
+      else toast("error","Erro",d.erro||"");
+    }catch(e){toast("error","Erro de conexão");}
+  } else {
+    if(!usuario||!senha){toast("warn","Preencha usuário e senha");return;}
+    if(senha.length<4){toast("warn","Senha deve ter pelo menos 4 caracteres");return;}
+    try{
+      const r=await fetch("/usuarios/novo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario,senha,tipo})});
+      const d=await r.json();
+      if(d.ok){toast("success","Usuário criado!",d.mensagem||"");closeUserModal();loadUsers();}
+      else toast("error","Erro ao criar",d.erro||"");
+    }catch(e){toast("error","Erro de conexão");}
+  }
 }
+
+function openResetPw(id,username){
+  editingUserId=id;
+  document.getElementById("resetPwUser").textContent=username;
+  document.getElementById("rpSenha").value="";
+  document.getElementById("rpConfirm").value="";
+  document.getElementById("resetPwModal").classList.add("open");
+}
+function closeResetPwModal(){document.getElementById("resetPwModal").classList.remove("open");}
+document.getElementById("resetPwModal")?.addEventListener("click",e=>{if(e.target===document.getElementById("resetPwModal"))closeResetPwModal();});
+
+async function submitResetPw(){
+  const senha=document.getElementById("rpSenha").value;
+  const confirm_pw=document.getElementById("rpConfirm").value;
+  if(!senha||senha.length<4){toast("warn","Senha deve ter pelo menos 4 caracteres");return;}
+  if(senha!==confirm_pw){toast("warn","As senhas não coincidem");return;}
+  try{
+    const r=await fetch(`/usuarios/${editingUserId}/senha`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({senha})});
+    const d=await r.json();
+    if(d.ok){toast("success","Senha redefinida!",d.mensagem||"");closeResetPwModal();}
+    else toast("error","Erro",d.erro||"");
+  }catch(e){toast("error","Erro de conexão");}
+}
+
+async function deleteUser(id,nome){
+  const ok=await confirmDialog(`Remover "${nome}"?`,"O usuário perderá acesso ao sistema.");
+  if(!ok)return;
+  try{
+    const d=await fetch(`/usuarios/${id}`,{method:"DELETE"}).then(r=>r.json());
+    if(d.ok){toast("success","Usuário removido");loadUsers();}
+    else toast("error","Erro",d.erro);
+  }catch(e){toast("error","Erro de conexão");}
+}
+
+function toggleUmPw(){const i=document.getElementById("umSenha");i.type=i.type==="password"?"text":"password";}
+function toggleRpPw(){const i=document.getElementById("rpSenha");i.type=i.type==="password"?"text":"password";}
 
 /* RESPONSIVE */
 (()=>{const mq=window.matchMedia("(max-width:700px)");const fix=e=>{const g=document.getElementById("dashGrid");if(g)g.style.gridTemplateColumns=e.matches?"1fr":"1fr 1fr";};mq.addEventListener("change",fix);fix(mq);})();
