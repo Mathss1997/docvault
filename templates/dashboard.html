@@ -1134,7 +1134,7 @@ async function init(){
   document.getElementById("userName").textContent=u.usuario||"—";
   document.getElementById("userRole").textContent=u.tipo==="admin"?"Administrador":"Usuário";
   document.getElementById("userAv").textContent=(u.usuario||"?")[0].toUpperCase();
-  if(u.tipo==="admin"){document.getElementById("nav-users").style.display="flex";document.getElementById("ctxDel").style.display="flex";}
+  if(u.tipo==="admin"){document.getElementById("nav-users").style.display="flex";document.getElementById("nav-logs").style.display="flex";document.getElementById("ctxDel").style.display="flex";updateLogsBadge();}
   else document.getElementById("ctxDel").style.display="none";
   await loadFiles();
   loadDashboard();
