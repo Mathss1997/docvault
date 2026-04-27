@@ -864,7 +864,52 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
       </div>
     </div>
 
-    <!-- USUÁRIOS -->
+    <!-- LOGS -->
+    <div id="sec-logs" class="sec">
+      <div class="stat-grid" id="logsStatGrid" style="margin-bottom:20px;"></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="position:relative;flex:1;min-width:200px;">
+          <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-3);pointer-events:none;">🔍</span>
+          <input type="text" class="finput" id="logQ" placeholder="Buscar por arquivo, pasta…" style="padding-left:34px;" oninput="debounceLogsSearch()">
+        </div>
+        <select class="finput finput-sm" id="logUsuario" onchange="loadLogs()" style="width:155px;"><option value="">Todos os usuários</option></select>
+        <select class="finput finput-sm" id="logAcao" onchange="loadLogs()" style="width:155px;"><option value="">Todas as ações</option></select>
+        <input type="date" class="finput finput-sm" id="logDataDe" onchange="loadLogs()" style="width:140px;" title="Data de">
+        <input type="date" class="finput finput-sm" id="logDataAte" onchange="loadLogs()" style="width:140px;" title="Data até">
+        <button class="btn btn-ghost btn-sm" onclick="clearLogsFilters()">✕ Limpar</button>
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <span class="panel-title">Histórico de atividades</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="badge b-slate" id="logsTotal">—</span>
+            <button class="btn btn-ghost btn-sm" onclick="exportLogs()">⬇ Exportar CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr>
+              <th style="width:155px;">Data / Hora</th>
+              <th style="width:110px;">Usuário</th>
+              <th style="width:130px;">Ação</th>
+              <th>Detalhe</th>
+              <th style="width:160px;">Contexto</th>
+              <th style="width:115px;">IP</th>
+            </tr></thead>
+            <tbody id="logsTbody"><tr><td colspan="6"><div class="pdf-load" style="padding:32px"><div class="spin"></div></div></td></tr></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);">
+          <span style="font-size:13px;color:var(--text-3);" id="logsPagInfo">—</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" id="logsPrev" onclick="logsPage(-1)">← Anterior</button>
+            <button class="btn btn-ghost btn-sm" id="logsNext" onclick="logsPage(+1)">Próxima →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        <!-- USUÁRIOS -->
     <div id="sec-users" class="sec">
       <div style="display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start;" id="usersGrid">
         <div class="panel">
@@ -1078,6 +1123,7 @@ function showSec(id,navEl){
   if(id==="sec-docs"){renderDocList();}
   if(id==="sec-exp")loadExp(S.exp.tipo,S.exp.caminho);
   if(id==="sec-idx")runSearch();
+  if(id==="sec-logs"){loadLogsResumo();loadLogs();}
   if(id==="sec-users")loadUsers();
 }
 
@@ -2044,6 +2090,80 @@ async function quickUpload(files){
     if(e.dataTransfer.files.length) quickUpload(e.dataTransfer.files);
   });
 })();
+
+/* ══ LOGS ══ */
+const LOG_COLORS={LOGIN:"b-blue",LOGOUT:"b-slate",UPLOAD:"b-green",DOWNLOAD:"b-teal",DELETE:"b-rose",CREATE_FOLDER:"b-amber",INDEXAR:"b-violet"};
+const LOGS={page:1,total:0,pages:1};
+let _logsTimer=null;
+
+function debounceLogsSearch(){clearTimeout(_logsTimer);_logsTimer=setTimeout(()=>{LOGS.page=1;loadLogs();},420);}
+function logsPage(dir){LOGS.page=Math.max(1,Math.min(LOGS.pages,LOGS.page+dir));loadLogs();}
+function clearLogsFilters(){["logQ","logUsuario","logAcao","logDataDe","logDataAte"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});LOGS.page=1;loadLogs();}
+
+async function loadLogs(){
+  const tbody=document.getElementById("logsTbody");
+  tbody.innerHTML=`<tr><td colspan="6"><div class="pdf-load" style="padding:24px"><div class="spin"></div></div></td></tr>`;
+  const params=new URLSearchParams({
+    q:document.getElementById("logQ")?.value||"",usuario:document.getElementById("logUsuario")?.value||"",
+    acao:document.getElementById("logAcao")?.value||"",data_de:document.getElementById("logDataDe")?.value||"",
+    data_ate:document.getElementById("logDataAte")?.value||"",page:LOGS.page,per_page:50,
+  });
+  try{
+    const data=await fetch(`/logs?${params}`).then(r=>r.json());
+    LOGS.total=data.total;LOGS.pages=data.pages;
+    document.getElementById("logsTotal").textContent=`${data.total} registro${data.total!==1?"s":""}`;
+    document.getElementById("logsPagInfo").textContent=`Página ${data.page} de ${data.pages} · ${data.total} total`;
+    document.getElementById("logsPrev").disabled=data.page<=1;
+    document.getElementById("logsNext").disabled=data.page>=data.pages;
+    if(!data.logs.length){tbody.innerHTML=`<tr><td colspan="6"><div class="empty" style="padding:32px"><div class="empty-ico">≡</div><h4>Nenhum registro</h4><p>Ajuste os filtros.</p></div></td></tr>`;return;}
+    tbody.innerHTML=data.logs.map(l=>{
+      const dt=l.criado_em?new Date(l.criado_em).toLocaleString("pt-BR"):"—";
+      const colorClass=LOG_COLORS[l.acao]||"b-slate";
+      const det=(l.detalhe||"").replace(/</g,"&lt;");
+      return`<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-2)">${dt}</td>
+        <td><strong>${l.usuario||"—"}</strong></td>
+        <td><span class="badge ${colorClass}">${l.icon} ${l.label}</span></td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px" title="${det}">${det||"—"}</td>
+        <td style="font-size:12px;color:var(--text-2)">${l.contexto||"—"}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11.5px;color:var(--text-3)">${l.ip||"—"}</td>
+      </tr>`;
+    }).join("");
+  }catch(e){tbody.innerHTML=`<tr><td colspan="6"><div class="empty"><p>Erro ao carregar logs.</p></div></td></tr>`;}
+}
+
+async function loadLogsResumo(){
+  try{
+    const data=await fetch("/logs/resumo").then(r=>r.json());
+    const icoCores={LOGIN:"ico-blue",LOGOUT:"ico-slate",UPLOAD:"ico-green",DOWNLOAD:"ico-teal",DELETE:"ico-rose",CREATE_FOLDER:"ico-amber",INDEXAR:"ico-violet"};
+    document.getElementById("logsStatGrid").innerHTML=Object.entries(data.por_acao).map(([k,v])=>`
+      <div class="stat-card"><div class="stat-ico ${icoCores[k]||"ico-slate"}">${v.icon}</div>
+      <div><div class="stat-num">${v.count}</div><div class="stat-lbl">${v.label}</div></div></div>`).join("");
+    const selAcao=document.getElementById("logAcao");
+    if(selAcao&&selAcao.options.length===1){Object.entries(data.por_acao).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=`${v.icon} ${v.label}`;selAcao.appendChild(o);});}
+    const selUser=document.getElementById("logUsuario");
+    if(selUser&&selUser.options.length===1){const users=await fetch("/usuarios").then(r=>r.json()).catch(()=>[]);users.forEach(u=>{const o=document.createElement("option");o.value=u.username;o.textContent=u.username;selUser.appendChild(o);});}
+    updateLogsBadge(data.total);
+  }catch(e){}
+}
+
+async function updateLogsBadge(total){
+  if(total===undefined){try{const d=await fetch("/logs/resumo").then(r=>r.json());total=d.total;}catch(e){return;}}
+  const el=document.getElementById("logsBadge");if(el)el.textContent=total;
+}
+
+function exportLogs(){
+  const params=new URLSearchParams({q:document.getElementById("logQ")?.value||"",usuario:document.getElementById("logUsuario")?.value||"",acao:document.getElementById("logAcao")?.value||"",data_de:document.getElementById("logDataDe")?.value||"",data_ate:document.getElementById("logDataAte")?.value||"",page:1,per_page:9999});
+  fetch(`/logs?${params}`).then(r=>r.json()).then(data=>{
+    const header="Data/Hora,Usuário,Ação,Detalhe,Contexto,IP\n";
+    const rows=data.logs.map(l=>[`"${l.criado_em||""}"`,`"${l.usuario||""}"`,`"${l.label||""}"`,`"${(l.detalhe||"").replace(/"/g,'""')}"`,`"${l.contexto||""}"`,`"${l.ip||""}"`].join(",")).join("\n");
+    const blob=new Blob(["\uFEFF"+header+rows],{type:"text/csv;charset=utf-8;"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download=`logs_docvault_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast("success","CSV exportado!");
+  }).catch(()=>toast("error","Erro ao exportar"));
+}
 
 init();
 </script>
