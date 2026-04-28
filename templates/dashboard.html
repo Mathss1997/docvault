@@ -1041,6 +1041,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
   <button class="ctx-i" onclick="ctxDownload()">⬇ Baixar</button>
   <div class="ctx-sep"></div>
   <button class="ctx-i danger" id="ctxDel" onclick="ctxDelete()">🗑 Excluir</button>
+  <button class="ctx-i danger" id="ctxDelFolder" style="display:none" onclick="ctxDeleteFolder()">🗑 Excluir pasta</button>
 </div>
 
 <!-- MODAL SCANNER -->
@@ -1702,6 +1703,8 @@ function showCtx(e,type,nome){
   e.preventDefault();S.ctx={type,nome};
   const m=document.getElementById("ctxMenu");m.style.top=e.pageY+"px";m.style.left=e.pageX+"px";m.classList.add("open");
   document.getElementById("ctxDel").style.display=(type==="file"&&S.tipo==="admin")?"flex":"none";
+  document.getElementById("ctxDelFolder").style.display=(type==="folder"&&S.tipo==="admin")?"flex":"none";
+  document.getElementById("ctxDelFolder").style.display=(type==="folder"&&S.tipo==="admin")?"flex":"none";
 }
 document.addEventListener("click",()=>document.getElementById("ctxMenu").classList.remove("open"));
 function ctxView(){if(S.ctx?.type==="file")openFile(S.exp.tipo,S.exp.caminho,S.ctx.nome,null);}
@@ -2447,6 +2450,31 @@ async function assinarDocumento(){
     toast("error","Erro de conexão");
     btn.disabled=false;
   }
+}
+
+/* ══ EXCLUIR PASTA ══ */
+async function ctxDeleteFolder(){
+  if(!S.ctx||S.ctx.type!=="folder")return;
+  const nome=S.ctx.nome;
+  const ok=await confirmDialog(`Excluir pasta "${nome}"?`,"Todos os arquivos dentro dela serão excluídos permanentemente.");
+  if(!ok)return;
+  try{
+    const caminho=S.exp.caminho?S.exp.caminho+"/"+nome:nome;
+    const res=await fetch("/excluir_pasta",{
+      method:"DELETE",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({tipo:S.exp.tipo,caminho})
+    });
+    const data=await res.json();
+    if(data.ok){
+      toast("success","Pasta excluída",nome);
+      await loadFiles();
+      loadExp(S.exp.tipo,S.exp.caminho);
+      loadDashboard();
+    } else {
+      toast("error","Erro ao excluir pasta",data.erro||"");
+    }
+  }catch(e){toast("error","Erro de conexão");}
 }
 
 init();

@@ -545,6 +545,70 @@ def signed_url(
         raise HTTPException(500, f"Erro ao gerar link: {e}")
 
 
+
+
+@app.delete("/excluir_pasta")
+async def excluir_pasta(request: Request, data: dict = Body(...)):
+    """Exclui uma pasta e todos os arquivos dentro dela no Supabase Storage."""
+    user = require_admin(request)
+    tipo    = data.get("tipo", "")
+    caminho = data.get("caminho", "")
+
+    if not tipo or not caminho:
+        raise HTTPException(400, "Tipo e caminho são obrigatórios")
+
+    path_base = f"{tipo}/{caminho}"
+
+    try:
+        # Lista todos os arquivos na pasta
+        items = supabase.storage.from_("documentos").list(path_base)
+        arquivos = [f"{path_base}/{item['name']}" for item in items if item.get("name") and not item.get("id") is None]
+
+        # Remove arquivos do storage
+        if arquivos:
+            supabase.storage.from_("documentos").remove(arquivos)
+
+        # Remove subpastas recursivamente (arquivos dentro de subpastas)
+        for item in items:
+            if item.get("name") and item.get("id") is None:
+                sub_path = f"{path_base}/{item['name']}"
+                try:
+                    sub_items = supabase.storage.from_("documentos").list(sub_path)
+                    sub_files = [f"{sub_path}/{s['name']}" for s in sub_items if s.get("name")]
+                    if sub_files:
+                        supabase.storage.from_("documentos").remove(sub_files)
+                except Exception:
+                    pass
+
+        # Remove registros do banco
+        db = SessionLocal()
+        try:
+            docs = db.query(Documento).filter(
+                Documento.categoria == tipo,
+                Documento.caminho.like(f"{caminho}%"),
+            ).all()
+            for doc in docs:
+                db.delete(doc)
+            db.commit()
+        finally:
+            db.close()
+
+        registrar_log(
+            user["username"], "DELETE",
+            detalhe=f"Pasta excluída: {caminho}",
+            contexto=tipo,
+            ip=get_ip(request),
+        )
+
+        log.info("Pasta excluída: %s/%s por %s", tipo, caminho, user["username"])
+        return {"ok": True, "mensagem": f"Pasta '{caminho}' excluída"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("Erro ao excluir pasta: %s", e)
+        raise HTTPException(500, f"Erro ao excluir pasta: {e}")
+
 # ─────────────────────────────────────────────
 # ASSINATURA DIGITAL ICP-BRASIL
 # ─────────────────────────────────────────────
