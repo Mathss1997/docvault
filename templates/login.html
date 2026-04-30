@@ -6,122 +6,165 @@
 <title>DocVault — Kronos Systems</title>
 <link rel="icon" type="image/png" href="/static/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 body {
   font-family:'DM Sans',sans-serif;
   min-height:100vh;
-  background: #0F0E0C;
+  background:
+    radial-gradient(900px circle at 30% 20%, rgba(99,102,241,.18), transparent 50%),
+    radial-gradient(700px circle at 80% 80%, rgba(139,92,246,.16), transparent 55%),
+    linear-gradient(165deg, #080C1A 0%, #0D1230 50%, #150A28 100%);
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:16px;
+  padding:24px;
   position:relative;
   overflow:hidden;
 }
 
-/* background pattern */
+/* ── Aurora blobs ── */
+.aurora {
+  position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden;
+}
+.aurora::before,
+.aurora::after,
+.aurora .blob {
+  content:""; position:absolute; border-radius:50%;
+  filter:blur(80px); will-change:transform;
+}
+.aurora::before {
+  width:620px; height:620px; left:-180px; top:-160px;
+  background:radial-gradient(circle, rgba(99,102,241,.85) 0%, rgba(99,102,241,0) 65%);
+  animation:auroraDrift1 22s ease-in-out infinite;
+}
+.aurora::after {
+  width:540px; height:540px; right:-160px; bottom:-180px;
+  background:radial-gradient(circle, rgba(139,92,246,.78) 0%, rgba(139,92,246,0) 65%);
+  animation:auroraDrift2 26s ease-in-out infinite;
+}
+.aurora .blob {
+  width:460px; height:460px; left:38%; top:28%;
+  background:radial-gradient(circle, rgba(129,140,248,.55) 0%, rgba(129,140,248,0) 65%);
+  animation:auroraDrift3 30s ease-in-out infinite;
+}
+@keyframes auroraDrift1 {
+  0%,100% { transform:translate(0,0) scale(1); }
+  33%     { transform:translate(180px,90px) scale(1.18); }
+  66%     { transform:translate(60px,220px) scale(.92); }
+}
+@keyframes auroraDrift2 {
+  0%,100% { transform:translate(0,0) scale(1); }
+  40%     { transform:translate(-220px,-120px) scale(1.22); }
+  75%     { transform:translate(-90px,-260px) scale(.88); }
+}
+@keyframes auroraDrift3 {
+  0%,100% { transform:translate(-50%,-50%) scale(1); }
+  25%     { transform:translate(calc(-50% + 160px),calc(-50% - 80px)) scale(1.15); }
+  60%     { transform:translate(calc(-50% - 200px),calc(-50% + 140px)) scale(.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before, .aurora::after, .aurora .blob { animation:none; }
+}
+
+/* ── Grid overlay ── */
 body::before {
   content:'';
   position:absolute; inset:0;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(37,99,235,.14) 0%, transparent 55%),
-    radial-gradient(circle at 80% 70%, rgba(14,165,233,.10) 0%, transparent 50%);
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:40px 40px;
   pointer-events:none;
-}
-body::after {
-  content:'';
-  position:absolute; inset:0;
-  background-image: repeating-linear-gradient(
-    0deg, transparent, transparent 39px,
-    rgba(255,255,255,.02) 39px, rgba(255,255,255,.02) 40px
-  ), repeating-linear-gradient(
-    90deg, transparent, transparent 39px,
-    rgba(255,255,255,.02) 39px, rgba(255,255,255,.02) 40px
-  );
-  pointer-events:none;
+  z-index:1;
 }
 
+/* ── Card — glass morphism ── */
 .card {
-  background: #1A1916;
-  border: 1px solid #2A2926;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 380px;
-  padding: 36px 32px;
-  position:relative;
-  z-index:1;
-  animation: slideUp .4s cubic-bezier(.4,0,.2,1);
+  position:relative; z-index:2;
+  background:rgba(20,18,36,.72);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(139,92,246,.2);
+  border-radius:16px;
+  width:100%;
+  max-width:400px;
+  padding:36px 32px 28px;
+  box-shadow:0 32px 80px rgba(0,0,0,.18);
+  color:#E0E7FF;
+  animation:cardIn .4s cubic-bezier(.4,0,.2,1);
 }
-@keyframes slideUp {
-  from { opacity:0; transform:translateY(18px); }
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(16px) scale(.98); }
   to   { opacity:1; transform:none; }
 }
 
 .logo {
   display:flex; align-items:center; justify-content:center;
-  margin-bottom:20px;
+  margin-bottom:8px;
 }
-.logo-icon {
-  width:60px; height:60px;
-  border-radius:12px;
-  display:flex; align-items:center; justify-content:center;
-}
-.logo-name { font-size:18px; font-weight:600; color:#F5F4F0; letter-spacing:-.3px; }
 
 h2 {
-  font-size:22px;
-  font-weight:600;
-  color:#F5F4F0;
-  letter-spacing:-.4px;
-  margin-bottom:6px;
+  font-family:'Syne',sans-serif;
+  font-size:26px;
+  font-weight:700;
+  color:#fff;
+  letter-spacing:-.5px;
+  margin:0;
 }
-.subtitle { font-size:13.5px; color:#6B6760; margin-bottom:28px; }
+.subtitle {
+  font-size:13px;
+  color:rgba(196,181,253,.72);
+  margin:6px 0 22px;
+  text-align:center;
+}
 
 .field { margin-bottom:14px; }
 .field label {
   display:block;
-  font-size:12px;
+  font-size:11.5px;
   font-weight:500;
-  color:#9B9793;
+  color:rgba(196,181,253,.68);
   margin-bottom:6px;
   letter-spacing:.3px;
   text-transform:uppercase;
 }
 .field input {
   width:100%;
-  background:#111110;
-  border:1px solid #2A2926;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(139,92,246,.2);
   border-radius:8px;
-  padding:10px 12px;
-  color:#F5F4F0;
-  font-size:14px;
+  padding:11px 14px;
+  color:#F0EEE6;
+  font-size:13.5px;
   font-family:inherit;
   outline:none;
-  transition:border-color .18s;
+  transition:border-color .17s cubic-bezier(.4,0,.2,1), box-shadow .17s cubic-bezier(.4,0,.2,1);
 }
-.field input:focus { border-color:#2563EB; }
-.field input::placeholder { color:#3D3C39; }
+.field input:focus {
+  border-color:#A78BFA;
+  box-shadow:0 0 0 3px rgba(139,92,246,.18);
+}
+.field input::placeholder { color:rgba(196,181,253,.3); }
 
 .pw-wrap { position:relative; }
 .pw-toggle {
   position:absolute; right:10px; top:50%; transform:translateY(-50%);
   background:none; border:none; cursor:pointer;
-  font-size:15px; color:#6B6760;
-  padding:2px;
-  line-height:1;
+  font-size:14px; color:rgba(196,181,253,.6);
+  padding:2px; line-height:1;
 }
-.pw-toggle:hover { color:#9B9793; }
+.pw-toggle:hover { color:rgba(196,181,253,.9); }
 
 .error-msg {
-  background:#3B1010;
-  border:1px solid #7F1D1D;
+  background:rgba(190,18,60,.15);
+  border:1px solid rgba(244,63,94,.3);
   color:#FCA5A5;
-  border-radius:8px;
-  padding:10px 12px;
-  font-size:13px;
-  margin-bottom:16px;
+  border-radius:7px;
+  padding:9px 12px;
+  font-size:12.5px;
+  margin-bottom:14px;
   display:none;
 }
 .error-msg.show { display:block; animation:shake .3s ease; }
@@ -133,8 +176,8 @@ h2 {
 
 .btn-login {
   width:100%;
-  padding:11px;
-  background:#2563EB;
+  padding:12px;
+  background:linear-gradient(135deg, #6366F1, #8B5CF6);
   color:#fff;
   border:none;
   border-radius:8px;
@@ -142,13 +185,14 @@ h2 {
   font-weight:600;
   font-family:inherit;
   cursor:pointer;
-  transition:opacity .18s, transform .12s;
-  margin-top:6px;
+  transition:transform .17s cubic-bezier(.4,0,.2,1), filter .17s cubic-bezier(.4,0,.2,1);
+  margin-top:8px;
   display:flex; align-items:center; justify-content:center; gap:8px;
 }
-.btn-login:hover { opacity:.88; }
-.btn-login:active { transform:scale(.98); }
+.btn-login:hover { filter:brightness(1.08); }
+.btn-login:active { transform:translateY(1px); }
 .btn-login:disabled { opacity:.45; cursor:not-allowed; }
+.btn-login.loading { filter:brightness(.85); cursor:wait; }
 
 .spinner {
   width:16px; height:16px;
@@ -163,14 +207,17 @@ h2 {
 @keyframes spin { to{transform:rotate(360deg)} }
 
 .footer {
-  margin-top:24px;
+  margin-top:22px;
   text-align:center;
-  font-size:12px;
-  color:#3D3C39;
+  font-size:11px;
+  color:rgba(196,181,253,.42);
+  letter-spacing:.3px;
 }
 </style>
 </head>
 <body>
+
+<div class="aurora"><span class="blob"></span></div>
 
 <div class="card">
   <div class="logo">
@@ -178,7 +225,7 @@ h2 {
   </div>
 
   <div style="text-align:center;margin-bottom:6px;">
-    <h2 style="margin:0;">DocVault</h2>
+    <h2>DocVault</h2>
   </div>
   <p class="subtitle">Faça login para acessar seus documentos.</p>
 
@@ -187,7 +234,7 @@ h2 {
   <form id="loginForm" method="post" action="/login" onsubmit="handleSubmit(event)">
     <div class="field">
       <label>Usuário</label>
-      <input type="text" name="usuario" autocomplete="username" required placeholder="seu.usuario">
+      <input type="text" name="usuario" autocomplete="username" required placeholder="seu.usuario" autofocus>
     </div>
     <div class="field">
       <label>Senha</label>
@@ -207,7 +254,6 @@ h2 {
 </div>
 
 <script>
-  // mostra erro se URL contém ?erro=1
   if (new URLSearchParams(location.search).get("erro") === "1") {
     document.getElementById("errMsg").classList.add("show");
   }
@@ -223,7 +269,6 @@ h2 {
     const btn = document.getElementById("submitBtn");
     btn.classList.add("loading");
     btn.disabled = true;
-    // deixa o form prosseguir normalmente (POST)
   }
 </script>
 </body>
