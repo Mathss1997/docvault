@@ -547,6 +547,55 @@ def signed_url(
 
 
 
+@app.post("/upload_scanner")
+async def upload_scanner(
+    request:  Request,
+    file:     UploadFile = File(...),
+    tipo:     str = Form(...),
+    caminho:  str = Form(""),
+):
+    """
+    Endpoint chamado pelo Scanner Agent local.
+    Recebe o PDF digitalizado e salva no Supabase + banco.
+    """
+    conteudo = await file.read()
+
+    path_supabase = build_storage_path(tipo, caminho, file.filename)
+
+    try:
+        supabase.storage.from_("documentos").upload(
+            path=path_supabase,
+            file=conteudo,
+            file_options={"content-type": "application/pdf"},
+        )
+    except Exception as e:
+        log.error("Erro upload scanner %s: %s", path_supabase, e)
+        raise HTTPException(500, f"Erro ao enviar arquivo: {e}")
+
+    db = SessionLocal()
+    try:
+        db.add(Documento(
+            nome=file.filename,
+            categoria=tipo,
+            caminho=caminho,
+            usuario="scanner",
+            data=str(datetime.now()),
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    registrar_log(
+        "scanner", "UPLOAD",
+        detalhe=file.filename,
+        contexto=f"{tipo}/{caminho}" if caminho else tipo,
+        ip=get_ip(request),
+    )
+
+    log.info("Scanner upload: %s -> %s", file.filename, path_supabase)
+    return {"ok": True, "mensagem": f"Arquivo '{file.filename}' salvo com sucesso."}
+
+
 @app.delete("/excluir_pasta")
 async def excluir_pasta(request: Request, data: dict = Body(...)):
     """Exclui uma pasta e todos os arquivos dentro dela no Supabase Storage."""
