@@ -37,7 +37,7 @@ SUPABASE_PUBLIC_URL = os.getenv("SUPABASE_PUBLIC_URL", SUPABASE_URL)
 SCANNER_TOKEN       = os.getenv("SCANNER_TOKEN", "")  # token compartilhado com o agente
 
 ALLOWED_EXTENSIONS  = {".pdf", ".png", ".jpg", ".jpeg", ".docx", ".xlsx", ".txt"}
-MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
+MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("SUPABASE_URL e SUPABASE_KEY são obrigatórios.")
@@ -86,7 +86,7 @@ def validate_file(filename: str, size: int) -> None:
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(400, f"Tipo não permitido: {ext}")
     if size > MAX_FILE_SIZE_BYTES:
-        raise HTTPException(400, f"Arquivo muito grande. Máx: 20 MB")
+        raise HTTPException(400, f"Arquivo muito grande. Máx: 100 MB")
 
 
 def build_storage_path(tipo: str, caminho: str, filename: str) -> str:
