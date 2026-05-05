@@ -133,7 +133,10 @@ def registrar_log(
 async def http_exception_handler(request: Request, exc: HTTPException):
     accept = request.headers.get("accept", "")
     xrw    = request.headers.get("x-requested-with", "")
-    if "application/json" in accept or xrw == "XMLHttpRequest":
+    ua     = request.headers.get("user-agent", "").lower()
+    # Retorna JSON para: AJAX, APIs, agentes Python, e rotas de scanner
+    if ("application/json" in accept or xrw == "XMLHttpRequest"
+        or "python" in ua or request.url.path.startswith("/upload_scanner")):
         return JSONResponse(status_code=exc.status_code, content={"erro": exc.detail})
     return RedirectResponse("/login")
 
