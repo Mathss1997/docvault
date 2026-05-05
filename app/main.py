@@ -596,7 +596,7 @@ async def upload_scanner(
     )
 
     log.info("Scanner upload: %s -> %s", file.filename, path_supabase)
-    return {"ok": True, "mensagem": f"Arquivo '{file.filename}' salvo com sucesso."}
+    return JSONResponse(content={"ok": True, "mensagem": f"Arquivo '{file.filename}' salvo com sucesso."})
 
 
 @app.delete("/excluir_pasta")
