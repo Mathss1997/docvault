@@ -34,12 +34,16 @@ SUPABASE_URL        = os.getenv("SUPABASE_URL")
 SUPABASE_KEY        = os.getenv("SUPABASE_KEY")
 SECRET_KEY          = os.getenv("SECRET_KEY", "CHANGE_ME_IN_PRODUCTION")
 SUPABASE_PUBLIC_URL = os.getenv("SUPABASE_PUBLIC_URL", SUPABASE_URL)
+SCANNER_TOKEN       = os.getenv("SCANNER_TOKEN", "")  # token compartilhado com o agente
 
 ALLOWED_EXTENSIONS  = {".pdf", ".png", ".jpg", ".jpeg", ".docx", ".xlsx", ".txt"}
 MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("SUPABASE_URL e SUPABASE_KEY são obrigatórios.")
+
+if not SCANNER_TOKEN:
+    log.warning("SCANNER_TOKEN não configurado — endpoint /upload_scanner ficará ABERTO. Configure na variável de ambiente.")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 log.info("Supabase conectado: %s", SUPABASE_URL)
@@ -49,7 +53,7 @@ log.info("Supabase conectado: %s", SUPABASE_URL)
 # ─────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="DocVault", version="2.2.0")
+app = FastAPI(title="DocVault", version="2.2.1")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.include_router(indexadores_router)
@@ -536,7 +540,6 @@ def signed_url(
     path = build_storage_path(tipo, caminho, nome)
     try:
         result = supabase.storage.from_("documentos").create_signed_url(path, 3600)
-        # Registra download apenas quando a URL é gerada para visualização/download
         registrar_log(
             user["username"], "DOWNLOAD",
             detalhe=nome,
@@ -548,23 +551,40 @@ def signed_url(
         raise HTTPException(500, f"Erro ao gerar link: {e}")
 
 
-
-
+# ─────────────────────────────────────────────
+# UPLOAD VIA SCANNER AGENT — protegido por token
+# ─────────────────────────────────────────────
 @app.post("/upload_scanner")
 async def upload_scanner(
     request:  Request,
     file:     UploadFile = File(...),
     tipo:     str = Form(...),
     caminho:  str = Form(""),
+    token:    str = Form(""),
 ):
     """
     Endpoint chamado pelo Scanner Agent local.
     Recebe o PDF digitalizado e salva no Supabase + banco.
+    Protegido por token compartilhado (env SCANNER_TOKEN).
     """
+    # ── Autenticação por token ──────────────────────────────────────
+    if not SCANNER_TOKEN:
+        log.error("Tentativa de upload via scanner com SCANNER_TOKEN nao configurado no servidor.")
+        raise HTTPException(503, "Endpoint scanner desabilitado: SCANNER_TOKEN nao configurado no servidor.")
+
+    if not token or token != SCANNER_TOKEN:
+        log.warning("Upload scanner com token invalido. IP: %s", get_ip(request))
+        raise HTTPException(401, "Token invalido")
+
+    # ── Validações ──────────────────────────────────────────────────
     conteudo = await file.read()
+    validate_file(file.filename, len(conteudo))
 
+    if not tipo:
+        raise HTTPException(400, "Tipo é obrigatório")
+
+    # ── Upload no Supabase ──────────────────────────────────────────
     path_supabase = build_storage_path(tipo, caminho, file.filename)
-
     try:
         supabase.storage.from_("documentos").upload(
             path=path_supabase,
@@ -575,6 +595,7 @@ async def upload_scanner(
         log.error("Erro upload scanner %s: %s", path_supabase, e)
         raise HTTPException(500, f"Erro ao enviar arquivo: {e}")
 
+    # ── Registro no banco ───────────────────────────────────────────
     db = SessionLocal()
     try:
         db.add(Documento(
@@ -612,15 +633,12 @@ async def excluir_pasta(request: Request, data: dict = Body(...)):
     path_base = f"{tipo}/{caminho}"
 
     try:
-        # Lista todos os arquivos na pasta
         items = supabase.storage.from_("documentos").list(path_base)
         arquivos = [f"{path_base}/{item['name']}" for item in items if item.get("name") and not item.get("id") is None]
 
-        # Remove arquivos do storage
         if arquivos:
             supabase.storage.from_("documentos").remove(arquivos)
 
-        # Remove subpastas recursivamente (arquivos dentro de subpastas)
         for item in items:
             if item.get("name") and item.get("id") is None:
                 sub_path = f"{path_base}/{item['name']}"
@@ -632,7 +650,6 @@ async def excluir_pasta(request: Request, data: dict = Body(...)):
                 except Exception:
                     pass
 
-        # Remove registros do banco
         db = SessionLocal()
         try:
             docs = db.query(Documento).filter(
@@ -661,6 +678,7 @@ async def excluir_pasta(request: Request, data: dict = Body(...)):
         log.error("Erro ao excluir pasta: %s", e)
         raise HTTPException(500, f"Erro ao excluir pasta: {e}")
 
+
 # ─────────────────────────────────────────────
 # ASSINATURA DIGITAL ICP-BRASIL
 # ─────────────────────────────────────────────
@@ -675,17 +693,11 @@ async def assinar_documento(
 ):
     """
     Assina digitalmente um PDF com certificado ICP-Brasil (A1 — .pfx/.p12).
-    Fluxo:
-      1. Baixa o PDF do Supabase
-      2. Assina com pyHanko usando o certificado fornecido
-      3. Faz upload do PDF assinado de volta ao Supabase
-      4. Atualiza o registro no banco
     """
     user = current_user(request)
     import tempfile
     from pathlib import Path
 
-    # Validações
     cert_ext = (certificado.filename or "").lower().split(".")[-1]
     if cert_ext not in ("pfx", "p12"):
         raise HTTPException(400, "Certificado deve ser .pfx ou .p12")
@@ -693,17 +705,14 @@ async def assinar_documento(
     if not nome.lower().endswith(".pdf"):
         raise HTTPException(400, "Apenas PDFs podem ser assinados")
 
-    # 1. Baixa o PDF do Supabase
     path_supabase = build_storage_path(tipo, caminho, nome)
     try:
         pdf_bytes = supabase.storage.from_("documentos").download(path_supabase)
     except Exception as e:
         raise HTTPException(500, f"Erro ao baixar PDF: {e}")
 
-    # 2. Lê o certificado
     cert_bytes = await certificado.read()
 
-    # 3. Assina o PDF
     try:
         from pyhanko.sign import signers, fields as sign_fields
         from pyhanko.sign.general import load_cert_for_signing
@@ -712,15 +721,13 @@ async def assinar_documento(
         from cryptography.hazmat.backends import default_backend
         import io
 
-        # Carrega o certificado .pfx
         private_key, certificate, additional_certs = pkcs12.load_key_and_certificates(
             cert_bytes, senha_cert.encode("utf-8"), default_backend()
         )
 
         if not private_key or not certificate:
-            raise HTTPException(400, "Certificado inv\u00e1lido ou senha incorreta")
+            raise HTTPException(400, "Certificado inválido ou senha incorreta")
 
-        # Prepara o assinante
         signer = signers.SimpleSigner(
             signing_cert=certificate,
             signing_key=private_key,
@@ -728,7 +735,6 @@ async def assinar_documento(
             ca_chain=list(additional_certs) if additional_certs else [],
         )
 
-        # Assina o PDF
         pdf_in = io.BytesIO(pdf_bytes)
         writer = IncrementalPdfFileWriter(pdf_in)
 
@@ -757,7 +763,6 @@ async def assinar_documento(
             raise HTTPException(400, "Senha do certificado incorreta")
         raise HTTPException(500, f"Erro ao assinar: {e}")
 
-    # 4. Faz upload do PDF assinado de volta
     try:
         supabase.storage.from_("documentos").update(
             path=path_supabase,
@@ -765,7 +770,6 @@ async def assinar_documento(
             file_options={"content-type": "application/pdf"},
         )
     except Exception:
-        # Se update falhar, tenta remove + upload
         try:
             supabase.storage.from_("documentos").remove([path_supabase])
             supabase.storage.from_("documentos").upload(
@@ -776,7 +780,6 @@ async def assinar_documento(
         except Exception as e:
             raise HTTPException(500, f"Erro ao salvar PDF assinado: {e}")
 
-    # 5. Atualiza registro no banco (marca como assinado)
     db = SessionLocal()
     try:
         doc = db.query(Documento).filter(
