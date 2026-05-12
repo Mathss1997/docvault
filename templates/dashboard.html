@@ -944,7 +944,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
 
     <!-- Modal Novo/Editar Usuário -->
     <div class="sidx-ov" id="userModal">
-      <div class="sidx-box" style="max-width:420px;">
+      <div class="sidx-box" style="max-width:480px;">
         <div class="sidx-hd">
           <div class="sidx-title" id="userModalTitle">Novo usuário</div>
           <button class="icon-btn" onclick="closeUserModal()">✕</button>
@@ -952,6 +952,12 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
         <div class="sidx-body" style="gap:14px;">
           <div class="fgroup"><label class="flabel">Nome de usuário</label>
             <input type="text" class="finput" id="umUsuario" placeholder="ex: joao.silva"></div>
+          <div class="fgroup"><label class="flabel">Nome completo <span style="color:var(--text-3);font-weight:400;">(opcional)</span></label>
+            <input type="text" class="finput" id="umNome" placeholder="ex: João da Silva"></div>
+          <div class="fgroup"><label class="flabel">E-mail <span style="color:var(--text-3);font-weight:400;">(opcional)</span></label>
+            <input type="email" class="finput" id="umEmail" placeholder="ex: joao@empresa.com"></div>
+          <div class="fgroup"><label class="flabel">Empresa / Cliente <span style="color:var(--text-3);font-weight:400;">(opcional)</span></label>
+            <input type="text" class="finput" id="umEmpresa" placeholder="ex: Câmara Municipal de União de Minas"></div>
           <div class="fgroup"><label class="flabel">Senha</label>
             <div style="position:relative;">
               <input type="password" class="finput" id="umSenha" placeholder="Mínimo 4 caracteres">
@@ -1758,19 +1764,24 @@ async function loadUsers(){
       const inicial=(u.username||"?")[0].toUpperCase();
       const isAdmin=u.tipo==="admin";
       const date=u.criado_em?new Date(u.criado_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric"}):"—";
+      const nomeEsc =(u.nome_completo||"").replace(/'/g,"\\'");
+      const emailEsc=(u.email||"").replace(/'/g,"\\'");
+      const empEsc  =(u.empresa||"").replace(/'/g,"\\'");
       return`
         <div class="doc-row" style="cursor:default;">
           <div style="width:38px;height:38px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px ${color}44;">${inicial}</div>
           <div class="doc-info" style="flex:1;">
-            <div class="doc-name" style="font-size:14px;">${u.username}</div>
+            <div class="doc-name" style="font-size:14px;">${u.nome_completo||u.username}${u.nome_completo?` <span style="color:var(--text-3);font-weight:400;font-size:12px;">(${u.username})</span>`:""}</div>
             <div class="doc-meta">
               <span class="badge ${isAdmin?"b-violet":"b-teal"}" style="font-size:10px;">${isAdmin?"🛡 Administrador":"👤 Usuário comum"}</span>
+              ${u.email?`<span class="doc-meta-dot">·</span><span class="doc-meta-item">✉ ${u.email}</span>`:""}
+              ${u.empresa?`<span class="doc-meta-dot">·</span><span class="doc-meta-item" style="color:var(--cyan-soft,#22d3ee);">🏢 ${u.empresa}</span>`:""}
               <span class="doc-meta-dot">·</span>
               <span class="doc-meta-item">Criado em ${date}</span>
             </div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button class="btn btn-ghost btn-sm" onclick="openEditUser(${u.id},'${u.username}','${u.tipo}')" title="Editar perfil">✏️</button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditUser(${u.id},'${u.username}','${u.tipo}','${nomeEsc}','${emailEsc}','${empEsc}')" title="Editar perfil">✏️</button>
             <button class="btn btn-amber btn-sm" onclick="openResetPw(${u.id},'${u.username}')" title="Redefinir senha">🔑</button>
             <button class="btn btn-rose btn-sm" onclick="deleteUser(${u.id},'${u.username}')" title="Remover">🗑</button>
           </div>
@@ -1780,28 +1791,35 @@ async function loadUsers(){
 }
 
 let editingUserId=null;
-function openUserModal(editId,username,tipo){
+function openUserModal(editId,username,tipo,nome,email,empresa){
   editingUserId=editId||null;
   document.getElementById("userModalTitle").textContent=editId?"Editar usuário":"Novo usuário";
   document.getElementById("umUsuario").value=username||"";
   document.getElementById("umUsuario").disabled=!!editId;
+  document.getElementById("umNome").value=nome||"";
+  document.getElementById("umEmail").value=email||"";
+  document.getElementById("umEmpresa").value=empresa||"";
   document.getElementById("umSenha").value="";
   document.getElementById("umSenha").placeholder=editId?"(não alterar)":"Mínimo 4 caracteres";
+  document.getElementById("umSenha").parentElement.parentElement.style.display=editId?"none":"";
   document.getElementById("umTipo").value=tipo||"user";
   document.getElementById("umSubmit").textContent=editId?"Salvar alterações":"Cadastrar";
   document.getElementById("userModal").classList.add("open");
 }
 function closeUserModal(){document.getElementById("userModal").classList.remove("open");editingUserId=null;}
 document.getElementById("userModal")?.addEventListener("click",e=>{if(e.target===document.getElementById("userModal"))closeUserModal();});
-function openEditUser(id,username,tipo){openUserModal(id,username,tipo);}
+function openEditUser(id,username,tipo,nome,email,empresa){openUserModal(id,username,tipo,nome,email,empresa);}
 
 async function submitUserModal(){
-  const usuario=document.getElementById("umUsuario").value.trim();
-  const senha=document.getElementById("umSenha").value;
-  const tipo=document.getElementById("umTipo").value;
+  const usuario      =document.getElementById("umUsuario").value.trim();
+  const nome_completo=document.getElementById("umNome").value.trim();
+  const email        =document.getElementById("umEmail").value.trim();
+  const empresa      =document.getElementById("umEmpresa").value.trim();
+  const senha        =document.getElementById("umSenha").value;
+  const tipo         =document.getElementById("umTipo").value;
   if(editingUserId){
     try{
-      const r=await fetch(`/usuarios/${editingUserId}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({tipo})});
+      const r=await fetch(`/usuarios/${editingUserId}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({tipo,nome_completo,email,empresa})});
       const d=await r.json();
       if(d.ok){toast("success","Perfil atualizado");closeUserModal();loadUsers();}
       else toast("error","Erro",d.erro||"");
@@ -1810,7 +1828,7 @@ async function submitUserModal(){
     if(!usuario||!senha){toast("warn","Preencha usuário e senha");return;}
     if(senha.length<4){toast("warn","Senha deve ter pelo menos 4 caracteres");return;}
     try{
-      const r=await fetch("/usuarios/novo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario,senha,tipo})});
+      const r=await fetch("/usuarios/novo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario,senha,tipo,nome_completo,email,empresa})});
       const d=await r.json();
       if(d.ok){toast("success","Usuário criado!",d.mensagem||"");closeUserModal();loadUsers();}
       else toast("error","Erro ao criar",d.erro||"");

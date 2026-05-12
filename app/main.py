@@ -53,6 +53,26 @@ log.info("Supabase conectado: %s", SUPABASE_URL)
 # ─────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
 
+# ─── Migration suave: adicionar colunas nome_completo/email/empresa em usuarios
+def _migrate_add_user_fields():
+    """Adiciona as colunas 'nome_completo', 'email', 'empresa' em 'usuarios' se ainda não existirem."""
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            for col in ("nome_completo", "email", "empresa"):
+                result = conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    f"WHERE table_name='usuarios' AND column_name='{col}'"
+                ))
+                if not result.fetchone():
+                    conn.execute(text(f"ALTER TABLE usuarios ADD COLUMN {col} VARCHAR"))
+                    conn.commit()
+                    log.info("✅ Migration aplicada: coluna '%s' adicionada em usuarios", col)
+    except Exception as e:
+        log.warning("⚠ Migration usuarios: %s", e)
+
+_migrate_add_user_fields()
+
 app = FastAPI(title="DocVault", version="2.2.1")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -209,9 +229,12 @@ def get_user(request: Request):
 @app.post("/usuarios/novo")
 def criar_usuario(request: Request, data: dict = Body(...)):
     require_admin(request)
-    usuario = data.get("usuario", "").strip()
-    senha   = data.get("senha", "")
-    tipo    = data.get("tipo", "user")
+    usuario       = data.get("usuario", "").strip()
+    senha         = data.get("senha", "")
+    nome_completo = data.get("nome_completo", "").strip()
+    email         = data.get("email", "").strip()
+    empresa       = data.get("empresa", "").strip()
+    tipo          = data.get("tipo", "user")
     if not usuario or not senha:
         raise HTTPException(400, "Usuário e senha são obrigatórios")
     db = SessionLocal()
@@ -221,6 +244,9 @@ def criar_usuario(request: Request, data: dict = Body(...)):
         db.add(Usuario(
             username=usuario,
             senha=pwd_context.hash(senha),
+            nome_completo=nome_completo or None,
+            email=email or None,
+            empresa=empresa or None,
             tipo=tipo,
             criado_em=datetime.now().isoformat(),
         ))
@@ -240,10 +266,13 @@ def listar_usuarios(request: Request):
     try:
         users = db.query(Usuario).all()
         return [{
-            "id":        u.id,
-            "username":  u.username,
-            "tipo":      u.tipo,
-            "criado_em": u.criado_em or "",
+            "id":             u.id,
+            "username":       u.username,
+            "nome_completo":  u.nome_completo or "",
+            "email":          u.email or "",
+            "empresa":        u.empresa or "",
+            "tipo":           u.tipo,
+            "criado_em":      u.criado_em or "",
         } for u in users]
     finally:
         db.close()
@@ -260,8 +289,14 @@ def editar_usuario(user_id: int, request: Request, data: dict = Body(...)):
         novo_tipo = data.get("tipo")
         if novo_tipo and novo_tipo in ("admin", "user", "comum"):
             user.tipo = novo_tipo
+        if "nome_completo" in data:
+            user.nome_completo = (data["nome_completo"] or "").strip() or None
+        if "email" in data:
+            user.email = (data["email"] or "").strip() or None
+        if "empresa" in data:
+            user.empresa = (data["empresa"] or "").strip() or None
         db.commit()
-        log.info("Usuário editado: %s → %s", user.username, novo_tipo)
+        log.info("Usuário editado: %s", user.username)
         return {"ok": True}
     finally:
         db.close()

@@ -50,11 +50,14 @@ class Indexador(Base):
 class Usuario(Base):
     __tablename__ = "usuarios"
 
-    id        = Column(Integer, primary_key=True, index=True)
-    username  = Column(String, unique=True)
-    senha     = Column(String)
-    tipo      = Column(String)
-    criado_em = Column(String)
+    id              = Column(Integer, primary_key=True, index=True)
+    username        = Column(String, unique=True)
+    senha           = Column(String)
+    nome_completo   = Column(String)
+    email           = Column(String)
+    empresa         = Column(String)  # Empresa/Cliente — usado pra identificação do usuário
+    tipo            = Column(String)
+    criado_em       = Column(String)
 
 
 class LogAtividade(Base):
