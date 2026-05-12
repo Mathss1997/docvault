@@ -55,6 +55,35 @@ CAMPOS_CATEGORIA = {
         {"key": "vigencia",    "label": "Vigência",           "type": "text",  "extra": True},
         {"key": "aditivo",     "label": "Aditivos",           "type": "text",  "extra": True},
     ],
+
+    "projetos_leis": [
+        {"key": "numero",      "label": "Nº do Projeto",       "type": "text"},
+        {"key": "ano",         "label": "Ano",                  "type": "text"},
+        {"key": "data_doc",    "label": "Data de Apresentação", "type": "date"},
+        {"key": "responsavel", "label": "Autor / Proponente",   "type": "text"},
+        {"key": "orgao",       "label": "Casa Legislativa",     "type": "text"},
+        {"key": "assunto",     "label": "Ementa / Objeto",      "type": "textarea"},
+        {"key": "situacao",    "label": "Situação",             "type": "select",
+         "options": ["Em tramitação", "Aprovado", "Arquivado", "Vetado", "Sancionado", "Rejeitado"]},
+        {"key": "tipo_norma",  "label": "Tipo de Norma",        "type": "select", "extra": True,
+         "options": ["Projeto de Lei Ordinária", "Projeto de Lei Complementar",
+                     "Projeto de Resolução", "Projeto de Decreto Legislativo",
+                     "Emenda à Lei Orgânica", "Indicação", "Moção"]},
+        {"key": "relator",     "label": "Relator",              "type": "text", "extra": True},
+        {"key": "comissao",    "label": "Comissão",             "type": "text", "extra": True},
+    ],
+    "documentos_diversos": [
+        {"key": "numero",      "label": "Número / Referência",  "type": "text"},
+        {"key": "ano",         "label": "Ano",                  "type": "text"},
+        {"key": "data_doc",    "label": "Data do Documento",    "type": "date"},
+        {"key": "assunto",     "label": "Assunto",              "type": "textarea"},
+        {"key": "responsavel", "label": "Responsável",          "type": "text"},
+        {"key": "orgao",       "label": "Órgão / Setor",        "type": "text"},
+        {"key": "situacao",    "label": "Situação",             "type": "select",
+         "options": ["Ativo", "Encerrado", "Pendente", "Arquivado"]},
+        {"key": "tipo_doc",    "label": "Tipo de Documento",    "type": "text", "extra": True},
+        {"key": "origem",      "label": "Origem",               "type": "text", "extra": True},
+    ],
 }
 
 CAMPOS_GENERICOS = [

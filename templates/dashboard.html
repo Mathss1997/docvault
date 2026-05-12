@@ -744,6 +744,8 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
             <option value="empenhos">Empenhos</option>
             <option value="licitacoes">Licitações</option>
             <option value="contratos">Contratos</option>
+            <option value="projetos_leis">Projetos de Leis</option>
+            <option value="documentos_diversos">Documentos Diversos</option>
           </select>
           <select class="finput finput-sm" id="docSort" onchange="renderDocList()" style="width:175px;">
             <option value="data_desc">Mais recentes primeiro</option>
@@ -788,6 +790,8 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
           <option value="empenhos">Empenhos</option>
           <option value="licitacoes">Licitações</option>
           <option value="contratos">Contratos</option>
+          <option value="projetos_leis">Projetos de Leis</option>
+          <option value="documentos_diversos">Documentos Diversos</option>
         </select>
         <button class="btn btn-ghost btn-sm" onclick="goBack()">← Voltar</button>
         <button class="btn btn-scanner btn-sm" id="btnScan" onclick="abrirModalScanner()" title="Digitalizar documento com scanner">
@@ -820,6 +824,8 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
           <option value="empenhos">Empenhos</option>
           <option value="licitacoes">Licitações</option>
           <option value="contratos">Contratos</option>
+          <option value="projetos_leis">Projetos de Leis</option>
+          <option value="documentos_diversos">Documentos Diversos</option>
         </select>
         <button class="btn btn-ghost btn-sm" onclick="toggleAdvFilters()">⚙ Filtros avançados</button>
         <button class="btn btn-teal btn-sm" onclick="runSearch()">Buscar</button>
@@ -841,6 +847,7 @@ textarea.finput{resize:vertical;min-height:72px;line-height:1.5;}
                 <option value="">Qualquer</option>
                 <option>Ativo</option><option>Encerrado</option><option>Pendente</option><option>Cancelado</option>
                 <option>Vigente</option><option>Rescindido</option><option>Em andamento</option><option>Homologada</option>
+                <option>Em tramitação</option><option>Aprovado</option><option>Arquivado</option><option>Vetado</option><option>Sancionado</option><option>Rejeitado</option>
               </select>
             </div>
             <div class="fgroup"><label class="flabel">Data — de / até</label>
